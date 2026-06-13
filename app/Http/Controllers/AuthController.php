@@ -73,19 +73,44 @@ class AuthController extends Controller
         return redirect()->route('dashboard')->with('success', 'Login berhasil.');
     }
 
-    public function register(): View
+    public function register(Request $request): View
     {
+        $this->generateRegisterCaptcha($request);
+
         return view('auth.register');
     }
 
     public function storeRegistration(Request $request): RedirectResponse
     {
-        $data = $request->validate([
+        $validator = Validator::make($request->all(), [
             'nisn' => ['required', 'digits:10', 'unique:tb_pengguna,id_pengguna'],
             'email' => ['required', 'email', 'max:100', 'unique:tb_pengguna,email'],
             'no_wa' => ['required', 'regex:/^8[0-9]{8,11}$/'],
             'password' => ['required', 'confirmed', 'min:3'],
+            'captcha_answer' => ['required', 'integer'],
+        ], [
+            'captcha_answer.required' => 'Captcha wajib diisi.',
+            'captcha_answer.integer' => 'Captcha harus berupa angka.',
         ]);
+
+        $validator->after(function ($validator) use ($request): void {
+            $expected = (string) $request->session()->get('register_captcha_answer');
+            $answer = trim((string) $request->input('captcha_answer'));
+
+            if ($expected === '' || ! hash_equals($expected, $answer)) {
+                $validator->errors()->add('captcha_answer', 'Jawaban captcha tidak sesuai.');
+            }
+        });
+
+        if ($validator->fails()) {
+            $this->generateRegisterCaptcha($request);
+
+            return back()
+                ->withErrors($validator)
+                ->onlyInput('nisn', 'email', 'no_wa');
+        }
+
+        $data = $validator->validated();
 
         Pengguna::create([
             'id_pengguna' => $data['nisn'],
@@ -96,6 +121,8 @@ class AuthController extends Controller
             'is_verified' => false,
             'verified_at' => null,
         ]);
+
+        $request->session()->forget(['register_captcha_question', 'register_captcha_answer']);
 
         return redirect()->route('login')->with('success', 'Pendaftaran berhasil. Akun anda menunggu verifikasi admin sekolah.');
     }
@@ -125,5 +152,14 @@ class AuthController extends Controller
 
         $request->session()->put('login_captcha_question', "{$firstNumber} + {$secondNumber}");
         $request->session()->put('login_captcha_answer', (string) ($firstNumber + $secondNumber));
+    }
+
+    private function generateRegisterCaptcha(Request $request): void
+    {
+        $firstNumber = random_int(2, 9);
+        $secondNumber = random_int(1, 9);
+
+        $request->session()->put('register_captcha_question', "{$firstNumber} + {$secondNumber}");
+        $request->session()->put('register_captcha_answer', (string) ($firstNumber + $secondNumber));
     }
 }

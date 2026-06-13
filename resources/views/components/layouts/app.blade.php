@@ -101,6 +101,20 @@
                 url("{{ asset('images/kop.jpg') }}") center/cover;
             z-index: -2;
         }
+        .login-auth-page::before {
+            background:
+                linear-gradient(110deg, rgba(15, 23, 42, .86) 0%, rgba(30, 64, 175, .76) 48%, rgba(14, 116, 144, .56) 100%),
+                url("{{ asset('images/login-vokasi-bg.png') }}") center/cover;
+        }
+        .register-auth-page::before {
+            background:
+                linear-gradient(110deg, rgba(15, 23, 42, .86) 0%, rgba(30, 64, 175, .74) 48%, rgba(14, 116, 144, .56) 100%),
+                url("{{ asset('images/register-vokasi-bg.png') }}") center/cover;
+        }
+        .login-auth-page,
+        .register-auth-page {
+            min-height: 100vh;
+        }
         .auth-page::after {
             content: "";
             position: absolute;
@@ -111,9 +125,29 @@
             transform-origin: left top;
             z-index: -1;
         }
+        .login-auth-page::after,
+        .register-auth-page::after {
+            display: none;
+        }
+        .login-auth-page .btn-primary,
+        .register-auth-page .btn-primary {
+            background: #1d4ed8;
+            border-color: #1d4ed8;
+        }
+        .login-auth-page .btn-primary:hover,
+        .register-auth-page .btn-primary:hover {
+            background: #1e40af;
+            border-color: #1e40af;
+        }
+        .login-auth-page a,
+        .register-auth-page a {
+            color: #1d4ed8;
+        }
         .auth-panel {
             border: 0;
-            box-shadow: 0 24px 70px rgba(16, 24, 40, .22);
+            background: rgba(255, 255, 255, .96);
+            box-shadow: 0 28px 80px rgba(15, 23, 42, .28);
+            backdrop-filter: blur(12px);
         }
         .auth-logo {
             width: 86px;
@@ -124,6 +158,34 @@
             padding: .5rem;
             box-shadow: 0 12px 28px rgba(16, 24, 40, .18);
         }
+        .auth-school-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .95rem;
+            padding: .7rem 1rem .7rem .7rem;
+            border: 1px solid rgba(255, 255, 255, .28);
+            border-radius: .75rem;
+            background: rgba(15, 23, 42, .24);
+            box-shadow: 0 16px 36px rgba(15, 23, 42, .18);
+            backdrop-filter: blur(10px);
+        }
+        .auth-school-badge .auth-logo {
+            width: 58px;
+            height: 58px;
+            box-shadow: none;
+        }
+        .auth-kicker {
+            color: rgba(255, 255, 255, .72);
+            font-size: .72rem;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+        .auth-school-name {
+            color: #fff;
+            font-weight: 800;
+            line-height: 1.15;
+        }
         .auth-copy {
             color: rgba(255, 255, 255, .88);
         }
@@ -133,23 +195,44 @@
             line-height: 1.12;
             margin: 0;
         }
+        .auth-info-grid {
+            display: grid;
+            gap: .85rem;
+            max-width: 34rem;
+        }
         .auth-feature {
             display: flex;
             gap: .75rem;
             align-items: flex-start;
             color: rgba(255, 255, 255, .9);
             font-size: .95rem;
+            padding: .85rem .95rem;
+            border: 1px solid rgba(255, 255, 255, .18);
+            border-radius: .65rem;
+            background: rgba(15, 23, 42, .26);
+            backdrop-filter: blur(10px);
         }
         .auth-feature-mark {
-            width: 28px;
+            min-width: 28px;
             height: 28px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, .18);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, .2);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             flex: 0 0 auto;
             font-weight: 800;
+            font-size: .78rem;
+        }
+        .auth-note {
+            max-width: 34rem;
+            color: rgba(255, 255, 255, .9);
+        }
+        .auth-note a {
+            color: #fff;
+            font-weight: 800;
+            text-decoration: underline;
+            text-underline-offset: .2rem;
         }
         .captcha-box {
             display: flex;
@@ -164,8 +247,45 @@
         .captcha-question {
             font-size: 1.25rem;
             font-weight: 800;
-            color: var(--spmb-red);
+            color: #1d4ed8;
             letter-spacing: 0;
+        }
+        .password-toggle-group .form-control {
+            border-right: 0;
+        }
+        .password-toggle {
+            width: 56px;
+            min-width: 56px;
+            border-color: #d0d5dd;
+            color: #475467;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .password-toggle:hover,
+        .password-toggle:focus {
+            background: #f9fafb;
+            color: #1d4ed8;
+            border-color: #d0d5dd;
+        }
+        .password-icon {
+            width: 22px;
+            height: 22px;
+            background: currentColor;
+            display: inline-block;
+        }
+        .password-icon-eye {
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.06 12.35a1 1 0 0 1 0-.7C3.78 7.35 7.95 4 12 4s8.22 3.35 9.94 7.65a1 1 0 0 1 0 .7C20.22 16.65 16.05 20 12 20s-8.22-3.35-9.94-7.65Z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center/contain no-repeat;
+        }
+        .password-icon-eye-off {
+            display: none;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m15 18-.72-3.25'/%3E%3Cpath d='M2 8a10.45 10.45 0 0 0 20 0'/%3E%3Cpath d='m20 15-1.73-2.05'/%3E%3Cpath d='m4 15 1.73-2.05'/%3E%3Cpath d='m9 18 .72-3.25'/%3E%3C/svg%3E") center/contain no-repeat;
+        }
+        .password-toggle[aria-pressed="true"] .password-icon-eye {
+            display: none;
+        }
+        .password-toggle[aria-pressed="true"] .password-icon-eye-off {
+            display: inline-block;
         }
         @media (max-width: 767.98px) {
             .sidebar { min-height: auto !important; }
@@ -173,29 +293,34 @@
             main { padding: 1rem !important; }
             .sticky-actions { margin-left: -1rem; margin-right: -1rem; border-radius: 0; border-left: 0; border-right: 0; }
             .auth-page { min-height: calc(100vh - 56px); }
+            .login-auth-page,
+            .register-auth-page { min-height: 100vh; }
             .auth-copy h1 { font-size: 1.6rem; }
             .auth-page::after { height: 64%; }
+            .auth-school-badge { width: 100%; }
         }
     </style>
 </head>
 <body>
-<nav class="navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="{{ route('dashboard') }}">SPMB SMK N 1 BINTUNI</a>
-        @isset($pengguna)
-            <div class="d-flex align-items-center gap-3">
-                <div class="text-end d-none d-sm-block">
-                    <div class="small fw-bold text-dark">{{ $pengguna->nama_pengguna ?: $pengguna->id_pengguna }}</div>
-                    <div class="small text-muted">{{ $pengguna->level }}</div>
+@unless(request()->routeIs('login', 'register'))
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="{{ route('dashboard') }}">SPMB SMK N 1 BINTUNI</a>
+            @isset($pengguna)
+                <div class="d-flex align-items-center gap-3">
+                    <div class="text-end d-none d-sm-block">
+                        <div class="small fw-bold text-dark">{{ $pengguna->nama_pengguna ?: $pengguna->id_pengguna }}</div>
+                        <div class="small text-muted">{{ $pengguna->level }}</div>
+                    </div>
+                    <form action="{{ route('logout') }}" method="post" class="mb-0">
+                        @csrf
+                        <button class="btn btn-outline-danger btn-sm" data-confirm="Apakah anda yakin akan keluar?">Logout</button>
+                    </form>
                 </div>
-                <form action="{{ route('logout') }}" method="post" class="mb-0">
-                    @csrf
-                    <button class="btn btn-outline-danger btn-sm" data-confirm="Apakah anda yakin akan keluar?">Logout</button>
-                </form>
-            </div>
-        @endisset
-    </div>
-</nav>
+            @endisset
+        </div>
+    </nav>
+@endunless
 
 @isset($pengguna)
     <div class="container-fluid app-shell">
@@ -281,6 +406,21 @@
             confirmedTarget.dataset.confirmed = 'true';
             confirmModal.hide();
             confirmedTarget.click();
+        });
+
+        document.querySelectorAll('[data-password-toggle]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const input = document.getElementById(button.dataset.passwordToggle);
+
+                if (! input) {
+                    return;
+                }
+
+                const shouldShow = input.type === 'password';
+                input.type = shouldShow ? 'text' : 'password';
+                button.setAttribute('aria-label', shouldShow ? 'Sembunyikan password' : 'Lihat password');
+                button.setAttribute('aria-pressed', shouldShow ? 'true' : 'false');
+            });
         });
     });
 </script>
