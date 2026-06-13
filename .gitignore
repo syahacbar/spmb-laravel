@@ -10,6 +10,7 @@
 /.idea
 /.nova
 /.phpunit.cache
+/.vagrant
 /.vscode
 /.zed
 /auth.json
@@ -20,6 +21,8 @@
 /public/storage
 /public/uploads
 /public/images/002*
+/public_html/hot
+/public_html/storage
 /storage/*.key
 /storage/pail
 /vendor
@@ -27,3 +30,7 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+app/storage/
+bootstrap/compiled.php
+npm-debug.log
+yarn-error.log
