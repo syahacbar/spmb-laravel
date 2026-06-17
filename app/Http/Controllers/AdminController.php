@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CalonSiswa;
 use App\Models\Formulir;
 use App\Models\KontakPanitia;
 use App\Models\Pengguna;
@@ -41,6 +42,19 @@ class AdminController extends Controller
             'settings' => PengaturanSpmb::allSettings(),
             'programs' => ProgramKeahlian::query()->ordered()->get(),
             'contacts' => KontakPanitia::query()->orderByDesc('is_primary')->orderBy('id')->get(),
+            'whitelistStats' => CalonSiswa::query()
+                ->select('tahun_pendaftaran')
+                ->selectRaw('count(*) as total')
+                ->selectRaw('sum(case when is_active = 1 then 1 else 0 end) as active_total')
+                ->groupBy('tahun_pendaftaran')
+                ->orderByDesc('tahun_pendaftaran')
+                ->get(),
+            'recentWhitelist' => CalonSiswa::query()
+                ->orderByDesc('tahun_pendaftaran')
+                ->orderByDesc('is_active')
+                ->orderBy('nama')
+                ->limit(8)
+                ->get(),
         ]);
     }
 
@@ -137,6 +151,80 @@ class AdminController extends Controller
         $program->delete();
 
         return back()->with('success', 'Program keahlian berhasil dihapus.');
+    }
+
+    public function importCalonSiswa(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'tahun_pendaftaran' => ['required', 'digits:4'],
+            'calon_siswa_csv' => ['required', 'file', 'mimes:csv,txt', 'max:4096'],
+            'deactivate_other_years' => ['nullable', 'boolean'],
+            'deactivate_missing_in_year' => ['nullable', 'boolean'],
+        ], [
+            'calon_siswa_csv.required' => 'File CSV whitelist calon siswa wajib dipilih.',
+            'calon_siswa_csv.mimes' => 'File whitelist harus berformat CSV atau TXT.',
+            'calon_siswa_csv.max' => 'Ukuran file whitelist maksimal 4 MB.',
+        ]);
+
+        $result = $this->readCalonSiswaCsv($request->file('calon_siswa_csv')->getRealPath());
+
+        if ($result['valid']->isEmpty()) {
+            return back()->with('warning', 'Tidak ada data valid yang dapat diimport. Pastikan header CSV berisi nisn,nama,tempat_lahir,tanggal_lahir,asal_sekolah.');
+        }
+
+        $tahun = $data['tahun_pendaftaran'];
+        $validRows = $result['valid'];
+        $importedNisn = $validRows->pluck('nisn')->all();
+
+        DB::transaction(function () use ($tahun, $validRows, $importedNisn, $request): void {
+            if ($request->boolean('deactivate_other_years')) {
+                CalonSiswa::query()
+                    ->where('tahun_pendaftaran', '!=', $tahun)
+                    ->update(['is_active' => false]);
+            }
+
+            if ($request->boolean('deactivate_missing_in_year')) {
+                CalonSiswa::query()
+                    ->where('tahun_pendaftaran', $tahun)
+                    ->whereNotIn('nisn', $importedNisn)
+                    ->update(['is_active' => false]);
+            }
+
+            foreach ($validRows as $row) {
+                CalonSiswa::updateOrCreate(
+                    ['nisn' => $row['nisn']],
+                    [
+                        'nama' => $row['nama'],
+                        'tempat_lahir' => $row['tempat_lahir'],
+                        'tanggal_lahir' => $row['tanggal_lahir'],
+                        'asal_sekolah' => $row['asal_sekolah'],
+                        'tahun_pendaftaran' => $tahun,
+                        'is_active' => true,
+                    ],
+                );
+            }
+        });
+
+        $message = "Whitelist calon siswa berhasil diimport: {$validRows->count()} data aktif untuk tahun {$tahun}.";
+
+        if ($result['skipped'] > 0) {
+            $message .= " {$result['skipped']} baris dilewati karena tidak valid.";
+        }
+
+        return back()->with('success', $message);
+    }
+
+    public function deactivateCalonSiswaWhitelist(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'tahun_pendaftaran' => ['required', 'digits:4'],
+        ]);
+
+        $updated = CalonSiswa::query()
+            ->where('tahun_pendaftaran', $data['tahun_pendaftaran'])
+            ->update(['is_active' => false]);
+
+        return back()->with('success', "Whitelist tahun {$data['tahun_pendaftaran']} berhasil dinonaktifkan ({$updated} data).");
     }
 
     public function storeKontakPanitia(Request $request): RedirectResponse
@@ -301,6 +389,81 @@ class AdminController extends Controller
             ->filter()
             ->values()
             ->all();
+    }
+
+    private function readCalonSiswaCsv(string $path): array
+    {
+        $file = fopen($path, 'r');
+        $header = fgetcsv($file);
+        $valid = collect();
+        $skipped = 0;
+
+        if (! $header) {
+            fclose($file);
+
+            return ['valid' => $valid, 'skipped' => 0];
+        }
+
+        $header = array_map(fn (string $column): string => strtolower(trim($column)), $header);
+        $requiredColumns = ['nisn', 'nama', 'tempat_lahir', 'tanggal_lahir', 'asal_sekolah'];
+
+        if (array_diff($requiredColumns, $header)) {
+            fclose($file);
+
+            return ['valid' => $valid, 'skipped' => 0];
+        }
+
+        while (($row = fgetcsv($file)) !== false) {
+            $row = array_slice(array_pad($row, count($header), ''), 0, count($header));
+            $data = array_combine($header, $row);
+
+            if (! $data) {
+                $skipped++;
+                continue;
+            }
+
+            $nisn = preg_replace('/\D+/', '', (string) ($data['nisn'] ?? ''));
+            $tanggalLahir = $this->normalizeDate((string) ($data['tanggal_lahir'] ?? ''));
+
+            if (
+                strlen($nisn) !== 10
+                || trim((string) ($data['nama'] ?? '')) === ''
+                || trim((string) ($data['tempat_lahir'] ?? '')) === ''
+                || ! $tanggalLahir
+                || trim((string) ($data['asal_sekolah'] ?? '')) === ''
+            ) {
+                $skipped++;
+                continue;
+            }
+
+            $valid->push([
+                'nisn' => $nisn,
+                'nama' => trim((string) $data['nama']),
+                'tempat_lahir' => trim((string) $data['tempat_lahir']),
+                'tanggal_lahir' => $tanggalLahir,
+                'asal_sekolah' => trim((string) $data['asal_sekolah']),
+            ]);
+        }
+
+        fclose($file);
+
+        return [
+            'valid' => $valid->unique('nisn')->values(),
+            'skipped' => $skipped,
+        ];
+    }
+
+    private function normalizeDate(string $value): ?string
+    {
+        $value = trim($value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        $timestamp = strtotime(str_replace('/', '-', $value));
+
+        return $timestamp ? date('Y-m-d', $timestamp) : null;
     }
 
     private function validatedContact(Request $request): array

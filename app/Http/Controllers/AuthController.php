@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CalonSiswa;
 use App\Models\KontakPanitia;
 use App\Models\Pengguna;
+use App\Models\PengaturanSpmb;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -123,13 +124,13 @@ class AuthController extends Controller
             ], 409);
         }
 
-        $calonSiswa = CalonSiswa::find($nisn);
+        $calonSiswa = CalonSiswa::activeForYear($this->tahunPendaftaranAktif())->find($nisn);
 
         if (! $calonSiswa) {
             return response()->json([
                 'ok' => false,
                 'type' => 'warning',
-                'message' => 'Tidak ditemukan pada database calon peserta didik. Silakan menghubungi panitia SPMB melalui WhatsApp.',
+                'message' => 'Tidak ditemukan pada whitelist calon peserta didik aktif tahun ini. Silakan menghubungi panitia SPMB melalui WhatsApp.',
             ], 404);
         }
 
@@ -165,8 +166,8 @@ class AuthController extends Controller
 
                 if (Pengguna::whereKey($nisn)->exists()) {
                     $validator->errors()->add('nisn', "NISN {$nisn} telah terdaftar pada sistem SPMB. Untuk informasi dan verifikasi kepemilikan akun, silakan menghubungi panitia SPMB.");
-                } elseif (! CalonSiswa::whereKey($nisn)->exists()) {
-                    $validator->errors()->add('nisn', 'Tidak ditemukan pada database calon peserta didik. Silakan menghubungi panitia SPMB melalui WhatsApp.');
+                } elseif (! CalonSiswa::activeForYear($this->tahunPendaftaranAktif())->whereKey($nisn)->exists()) {
+                    $validator->errors()->add('nisn', 'Tidak ditemukan pada whitelist calon peserta didik aktif tahun ini. Silakan menghubungi panitia SPMB melalui WhatsApp.');
                 }
             }
 
@@ -187,7 +188,7 @@ class AuthController extends Controller
         }
 
         $data = $validator->validated();
-        $calonSiswa = CalonSiswa::findOrFail($data['nisn']);
+        $calonSiswa = CalonSiswa::activeForYear($this->tahunPendaftaranAktif())->findOrFail($data['nisn']);
 
         Pengguna::create([
             'id_pengguna' => $data['nisn'],
@@ -246,6 +247,11 @@ class AuthController extends Controller
     {
         return KontakPanitia::primary()?->nomor_whatsapp
             ?: (string) config('services.spmb.panitia_whatsapp');
+    }
+
+    private function tahunPendaftaranAktif(): string
+    {
+        return (string) PengaturanSpmb::getValue('tahun_pendaftaran', date('Y'));
     }
 
     private function panitiaWhatsappUrl(): string

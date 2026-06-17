@@ -45,6 +45,29 @@
         .primary-contact {
             border-left: 4px solid #16a34a;
         }
+        .whitelist-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: .75rem;
+        }
+        .whitelist-summary-item {
+            border: 1px solid #e4e7ec;
+            border-radius: .65rem;
+            background: #f8fafc;
+            padding: .9rem;
+        }
+        .whitelist-summary-item span {
+            display: block;
+            color: #667085;
+            font-size: .78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .whitelist-summary-item strong {
+            color: #172033;
+            font-size: 1.35rem;
+            font-weight: 900;
+        }
     </style>
 
     <div class="page-title">
@@ -117,6 +140,98 @@
                         <button class="btn btn-primary">Simpan Pengaturan Kartu</button>
                     </div>
                 </form>
+            </div>
+        </section>
+
+        <section class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="settings-section-title">Whitelist Calon Siswa</h4>
+                <p class="settings-section-subtitle">Import data NISN yang diperbolehkan membuat akun. Data tahun lama bisa dinonaktifkan tanpa dihapus.</p>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ route('admin.pengaturan.whitelist.import') }}" enctype="multipart/form-data" class="row g-3 align-items-end">
+                    @csrf
+                    <div class="col-md-3">
+                        <label class="form-label">Tahun Pendaftaran</label>
+                        <input type="text" name="tahun_pendaftaran" value="{{ old('tahun_pendaftaran', $settings['tahun_pendaftaran']) }}" class="form-control" maxlength="4" required>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">File CSV Whitelist</label>
+                        <input type="file" name="calon_siswa_csv" class="form-control" accept=".csv,text/csv,text/plain" required>
+                    </div>
+                    <div class="col-md-4 d-grid">
+                        <button class="btn btn-primary">Import Whitelist</button>
+                    </div>
+                    <div class="col-12">
+                        <div class="small text-muted mb-2">Format kolom CSV: <strong>nisn,nama,tempat_lahir,tanggal_lahir,asal_sekolah</strong>.</div>
+                        <div class="row g-2">
+                            <div class="col-lg-6">
+                                <div class="form-check">
+                                    <input type="checkbox" name="deactivate_other_years" value="1" class="form-check-input" id="nonaktifTahunLain" checked>
+                                    <label class="form-check-label" for="nonaktifTahunLain">Nonaktifkan whitelist tahun lain setelah import</label>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="form-check">
+                                    <input type="checkbox" name="deactivate_missing_in_year" value="1" class="form-check-input" id="nonaktifTidakAdaCsv" checked>
+                                    <label class="form-check-label" for="nonaktifTidakAdaCsv">Nonaktifkan NISN tahun ini yang tidak ada di CSV baru</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <hr>
+
+                <div class="whitelist-summary mb-3">
+                    @forelse($whitelistStats as $stat)
+                        <div class="whitelist-summary-item">
+                            <span>Tahun {{ $stat->tahun_pendaftaran }}</span>
+                            <strong>{{ number_format((int) $stat->active_total) }}</strong>
+                            <div class="small text-muted">aktif dari {{ number_format((int) $stat->total) }} data</div>
+                            <form method="post" action="{{ route('admin.pengaturan.whitelist.deactivate') }}" class="mt-2">
+                                @csrf
+                                <input type="hidden" name="tahun_pendaftaran" value="{{ $stat->tahun_pendaftaran }}">
+                                <button class="btn btn-outline-danger btn-sm" data-confirm="Nonaktifkan semua whitelist calon siswa tahun {{ $stat->tahun_pendaftaran }}?">Nonaktifkan Tahun Ini</button>
+                            </form>
+                        </div>
+                    @empty
+                        <div class="text-muted">Belum ada data whitelist calon siswa.</div>
+                    @endforelse
+                </div>
+
+                @if($recentWhitelist->isNotEmpty())
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle settings-table mb-0">
+                            <thead>
+                            <tr>
+                                <th>NISN</th>
+                                <th class="wide">Nama</th>
+                                <th>Asal Sekolah</th>
+                                <th>Tahun</th>
+                                <th>Status</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @foreach($recentWhitelist as $calonSiswa)
+                                <tr>
+                                    <td>{{ $calonSiswa->nisn }}</td>
+                                    <td>{{ $calonSiswa->nama }}</td>
+                                    <td>{{ $calonSiswa->asal_sekolah }}</td>
+                                    <td>{{ $calonSiswa->tahun_pendaftaran }}</td>
+                                    <td>
+                                        @if($calonSiswa->is_active)
+                                            <span class="badge text-bg-success">Aktif</span>
+                                        @else
+                                            <span class="badge text-bg-secondary">Nonaktif</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
             </div>
         </section>
 

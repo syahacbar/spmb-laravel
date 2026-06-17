@@ -10,6 +10,7 @@ class CalonSiswaSeeder extends Seeder
     public function run(): void
     {
         $path = database_path('data/calon_siswa.csv');
+        $tahunPendaftaran = '2026';
 
         if (! is_file($path)) {
             $this->command?->warn('File database/data/calon_siswa.csv tidak ditemukan. Seeder calon siswa dilewati.');
@@ -29,11 +30,19 @@ class CalonSiswaSeeder extends Seeder
             }
 
             $importedNisn[] = $data['nisn'];
-            CalonSiswa::updateOrCreate(['nisn' => $data['nisn']], $data);
+            CalonSiswa::updateOrCreate(
+                ['nisn' => $data['nisn']],
+                array_merge($data, [
+                    'tahun_pendaftaran' => $tahunPendaftaran,
+                    'is_active' => true,
+                ]),
+            );
         }
 
         fclose($file);
 
-        CalonSiswa::whereNotIn('nisn', $importedNisn)->delete();
+        CalonSiswa::where('tahun_pendaftaran', $tahunPendaftaran)
+            ->whereNotIn('nisn', $importedNisn)
+            ->update(['is_active' => false]);
     }
 }
