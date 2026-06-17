@@ -1,4 +1,26 @@
 <x-layouts.app :pengguna="$pengguna" title="Periksa Formulir">
+    @php
+        $nomorPendaftaran = 'SPMB-2026-'.str_pad((string) $formulir->id, 3, '0', STR_PAD_LEFT);
+        $alamatSiswa = collect([
+            $formulir->alamat,
+            $formulir->alamat_kelurahan,
+            $formulir->alamat_kecamatan,
+            $formulir->alamat_kabupaten,
+        ])->filter()->implode(', ');
+        $alamatOrtu = collect([
+            $formulir->alamat_ortu,
+            $formulir->alamat_ortu_kelurahan,
+            $formulir->alamat_ortu_kecamatan,
+            $formulir->alamat_ortu_kabupaten,
+            $formulir->alamat_ortu_provinsi,
+        ])->filter()->implode(', ');
+        $documents = [
+            'surat_keterangan_lulus' => ['label' => 'Ijazah / SKL', 'type' => 'PDF', 'preview' => 'pdf'],
+            'kartu_keluarga' => ['label' => 'Kartu Keluarga', 'type' => 'PDF', 'preview' => 'pdf'],
+            'foto_selfie' => ['label' => 'Pas Foto', 'type' => 'Gambar', 'preview' => 'image'],
+        ];
+    @endphp
+
     <div class="page-title">
         <div>
             <h3 class="fw-bold">Periksa Formulir Pendaftaran</h3>
@@ -6,56 +28,200 @@
         </div>
     </div>
 
-    <div class="row g-3">
-        <div class="col-xl-9">
-            <div class="card shadow-sm">
-                <div class="card-body p-3 p-md-4">
-                    <div class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-3">
-                        <div>
-                            <div class="fw-bold">Ringkasan Data Pendaftaran</div>
-                            <div class="small text-muted">Cek ulang semua informasi sebelum final.</div>
-                        </div>
-                        @if($formulir->isSubmitted())
-                            <span class="badge text-bg-success align-self-start">Terkirim Final</span>
-                        @else
-                            <span class="badge text-bg-warning align-self-start">Draft</span>
-                        @endif
-                    </div>
-
-                    @include('formulir.partials.detail-table', ['formulir' => $formulir])
-
-                    <div class="row mt-4 g-3">
-                        @foreach([
-                            'surat_keterangan_lulus' => 'Ijazah / SKL',
-                            'kartu_keluarga' => 'Kartu Keluarga',
-                            'foto_selfie' => 'Pas Foto',
-                        ] as $field => $label)
-                            <div class="col-md-4 mb-3">
-                                <div class="small fw-bold mb-2">{{ $label }}</div>
-                                <a href="{{ asset($formulir->{$field}) }}" target="_blank">
-                                    <img src="{{ asset($formulir->{$field}) }}" class="img-fluid border rounded" alt="{{ $label }}">
-                                </a>
-                            </div>
-                        @endforeach
-                    </div>
-
+    <div class="history-card card shadow-sm mb-4">
+        <div class="card-body p-0">
+            <div class="history-header">
+                <div>
+                    <div class="text-muted small text-uppercase fw-bold">Nomor Pendaftaran</div>
+                    <div class="history-number">{{ $nomorPendaftaran }}</div>
+                </div>
+                <div class="text-md-end">
                     @if($formulir->isSubmitted())
-                        <div class="alert alert-success mb-0">
-                            Formulir sudah dikirim final pada {{ $formulir->submitted_at?->format('d/m/Y H:i') }}.
-                        </div>
+                        <span class="badge text-bg-success">Terkirim Final</span>
+                        <div class="small text-muted mt-1">{{ $formulir->submitted_at?->format('d/m/Y H:i') }}</div>
                     @else
-                        <div class="alert alert-warning">
-                            Pastikan seluruh data dan berkas sudah benar sebelum dikirim final.
+                        <span class="badge text-bg-warning">Draft</span>
+                        <div class="small text-muted mt-1">Belum dikirim final</div>
+                    @endif
+                </div>
+            </div>
+
+            <div class="history-layout">
+                <div class="history-main">
+                    <section class="history-section">
+                        <div class="history-section-title">Data Calon Peserta Didik</div>
+                        <div class="history-identity">
+                            <div class="history-avatar">{{ strtoupper(mb_substr($formulir->nama, 0, 1)) }}</div>
+                            <div>
+                                <div class="history-name">{{ $formulir->nama }}</div>
+                                <div class="text-muted">{{ $formulir->nisn }} &middot; {{ $formulir->asal_sekolah }}</div>
+                            </div>
                         </div>
-                        <div class="sticky-actions d-flex flex-column flex-sm-row gap-2">
+                        <div class="history-grid mt-3">
+                            <div>
+                                <span>NIK</span>
+                                <strong>{{ $formulir->nik }}</strong>
+                            </div>
+                            <div>
+                                <span>TTL</span>
+                                <strong>{{ $formulir->tempat_lahir }}, {{ $formulir->tanggal_lahir?->format('d/m/Y') }}</strong>
+                            </div>
+                            <div>
+                                <span>Jenis Kelamin</span>
+                                <strong>{{ $formulir->jenis_kelamin }}</strong>
+                            </div>
+                            <div>
+                                <span>Agama</span>
+                                <strong>{{ $formulir->agama }}</strong>
+                            </div>
+                            <div>
+                                <span>No HP / WA</span>
+                                <strong>{{ $formulir->hp }}</strong>
+                            </div>
+                            <div>
+                                <span>Tanggal Simpan</span>
+                                <strong>{{ $formulir->created_at?->format('d/m/Y H:i') }}</strong>
+                            </div>
+                            <div class="history-grid-full">
+                                <span>Domisili</span>
+                                <strong>{{ $alamatSiswa }}</strong>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="history-section">
+                        <div class="history-section-title">Data Orang Tua / Wali</div>
+                        <div class="history-grid">
+                            <div>
+                                <span>Ayah</span>
+                                <strong>{{ $formulir->nama_ayah }} &middot; {{ $formulir->pekerjaan_ayah }}</strong>
+                            </div>
+                            <div>
+                                <span>Ibu</span>
+                                <strong>{{ $formulir->nama_ibu }} &middot; {{ $formulir->pekerjaan_ibu }}</strong>
+                            </div>
+                            <div>
+                                <span>No HP / WA</span>
+                                <strong>{{ $formulir->hp_ortu }}</strong>
+                            </div>
+                            <div>
+                                <span>Sama dengan Domisili Siswa</span>
+                                <strong>{{ $formulir->alamat_ortu_sama_dengan_siswa ? 'Ya' : 'Tidak' }}</strong>
+                            </div>
+                            <div class="history-grid-full">
+                                <span>Alamat Orang Tua / Wali</span>
+                                <strong>{{ $alamatOrtu }}</strong>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="history-section">
+                        <div class="history-section-title">Berkas Pendaftaran</div>
+                        <div class="row g-3">
+                            @foreach($documents as $field => $document)
+                                @php
+                                    $path = $formulir->{$field};
+                                    $fileExists = $path && file_exists(public_path($path));
+                                    $isImage = $document['preview'] === 'image' && $fileExists;
+                                    $isPdf = $document['preview'] === 'pdf' && $fileExists;
+                                @endphp
+                                <div class="col-md-4">
+                                    <div class="uploaded-file h-100">
+                                        <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                                            <div>
+                                                <div class="fw-bold">{{ $document['label'] }}</div>
+                                                <div class="small text-muted">{{ $document['type'] }}</div>
+                                            </div>
+                                            <span class="badge text-bg-light">{{ $fileExists ? 'Ada' : 'Kosong' }}</span>
+                                        </div>
+
+                                        @if($isImage)
+                                            <a href="{{ asset($path) }}" target="_blank" class="d-block mb-2">
+                                                <img src="{{ asset($path) }}" class="img-fluid border rounded" alt="{{ $document['label'] }}">
+                                            </a>
+                                        @elseif($isPdf)
+                                            <div class="ratio ratio-4x3 mb-2">
+                                                <iframe src="{{ asset($path) }}#toolbar=0&navpanes=0&scrollbar=0" class="border rounded bg-white" title="Preview {{ $document['label'] }}"></iframe>
+                                            </div>
+                                            <div class="document-hint mb-2">Preview halaman pertama berkas PDF.</div>
+                                        @else
+                                            <div class="document-hint mb-2">Berkas belum tersedia.</div>
+                                        @endif
+
+                                        @if($fileExists)
+                                            <a href="{{ asset($path) }}" target="_blank" class="btn btn-outline-primary btn-sm w-100">Buka Berkas</a>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="history-side">
+                    <section class="history-side-panel">
+                        <div class="history-section-title">Program Keahlian</div>
+                        <div class="program-pill">{{ $formulir->program_keahlian_1 }}</div>
+                        <div class="program-pill">{{ $formulir->program_keahlian_2 }}</div>
+                    </section>
+
+                    <section class="history-side-panel">
+                        <div class="history-section-title">Status Pemeriksaan</div>
+                        @if($formulir->isSubmitted())
+                            <div class="alert alert-success mb-0">
+                                Formulir sudah dikirim final pada {{ $formulir->submitted_at?->format('d/m/Y H:i') }}.
+                            </div>
+                        @else
+                            <div class="alert alert-warning mb-0">
+                                Pastikan seluruh data dan berkas sudah benar sebelum dikirim final.
+                            </div>
+                        @endif
+                    </section>
+
+                    <section class="history-side-panel">
+                        <div class="history-section-title">Berkas</div>
+                        <div class="document-list">
+                            @foreach($documents as $field => $document)
+                                @php
+                                    $path = $formulir->{$field};
+                                    $fileExists = $path && file_exists(public_path($path));
+                                @endphp
+                                @if($fileExists)
+                                    <a href="{{ asset($path) }}" target="_blank">{{ $document['label'] }}</a>
+                                @else
+                                    <span class="text-muted small">{{ $document['label'] }} belum tersedia</span>
+                                @endif
+                            @endforeach
+                        </div>
+                    </section>
+
+                    <section class="history-side-panel">
+                        <div class="history-section-title">Aktivitas</div>
+                        <div class="history-timeline">
+                            <div>
+                                <span></span>
+                                <p>Formulir disimpan<br><small>{{ $formulir->created_at?->format('d/m/Y H:i') }}</small></p>
+                            </div>
+                            <div class="{{ $formulir->isSubmitted() ? '' : 'muted' }}">
+                                <span></span>
+                                <p>Dikirim final<br><small>{{ $formulir->submitted_at?->format('d/m/Y H:i') ?: 'Menunggu' }}</small></p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="d-grid gap-2">
+                        @if($formulir->isSubmitted())
+                            <a href="{{ route('formulir.cetak', $formulir) }}" class="btn btn-outline-success" target="_blank">Cetak Kartu</a>
+                            <a href="{{ route('formulir.riwayat') }}" class="btn btn-outline-secondary">Kembali ke Riwayat</a>
+                        @else
                             <a href="{{ route('formulir.edit', $formulir) }}" class="btn btn-outline-secondary">Edit Data</a>
                             <form method="post" action="{{ route('formulir.kirim', $formulir) }}" class="mb-0">
                                 @csrf
                                 <button class="btn btn-primary w-100" data-confirm="Kirim formulir final? Data tidak dapat diedit lagi oleh siswa setelah dikirim.">Kirim Final</button>
                             </form>
-                        </div>
-                    @endif
-                </div>
+                        @endif
+                    </div>
+                </aside>
             </div>
         </div>
     </div>
