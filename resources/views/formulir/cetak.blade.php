@@ -208,7 +208,9 @@
 </head>
 <body>
 @php
-    $tahunPendaftaran = '2026';
+    $settings = $settings ?? \App\Models\PengaturanSpmb::allSettings();
+    $tahunPendaftaran = $settings['tahun_pendaftaran'] ?? '2026';
+    $tahunPelajaran = $settings['tahun_pelajaran'] ?? '2026/2027';
     $nomorUrutPendaftaran = (int) $formulir->id;
     $nomorPendaftaran = 'SPMB-'.$tahunPendaftaran.'-'.str_pad((string) $nomorUrutPendaftaran, 3, '0', STR_PAD_LEFT);
     $nomorRuang = max(1, (int) ceil($nomorUrutPendaftaran / 25));
@@ -245,9 +247,17 @@
 
         return $formatTanggalIndonesia($tanggal).' '.$tanggal->format('H:i').' WIT';
     };
-    $tanggalTes = '06 Juli 2026';
-    $waktuTes = '08.00 WIT s.d. selesai';
-    $tempatTes = 'SMK Negeri 1 Bintuni';
+    $tanggalTes = $settings['tanggal_tes'] ?? '06 Juli 2026';
+    $waktuTes = $settings['waktu_tes'] ?? '08.00 WIT s.d. selesai';
+    $tempatTes = $settings['tempat_tes'] ?? 'SMK Negeri 1 Bintuni';
+    $kepalaNama = $settings['kepala_nama'] ?? 'Panitia SPMB';
+    $kepalaNip = $settings['kepala_nip'] ?? '';
+    $kepalaJabatan = $settings['kepala_jabatan'] ?? 'Panitia SPMB';
+    $kepalaTtdPath = $settings['kepala_ttd_path'] ?? 'images/ttdketua.png';
+    $catatanKartu = collect(preg_split('/\r\n|\r|\n/', $settings['catatan_kartu'] ?? ''))
+        ->map(fn (string $line) => trim($line))
+        ->filter()
+        ->values();
 @endphp
 
 <div class="print-actions no-print d-flex justify-content-between align-items-center">
@@ -268,7 +278,7 @@
     </div>
 
     <div class="card-title">
-        <div class="fw-bold fs-6">KARTU TANDA PENDAFTARAN <br> SISTEM PENERIMAAN MURID BARU TAHUN PELAJARAN 2026/2027</div>
+        <div class="fw-bold fs-6">KARTU TANDA PENDAFTARAN <br> SISTEM PENERIMAAN MURID BARU TAHUN PELAJARAN {{ $tahunPelajaran }}</div>
     </div>
 
     <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
@@ -355,20 +365,27 @@
         </div>
         <div class="signature-box">
             <div class="signature-caption">Bintuni, {{ $formatTanggalIndonesia(now()) }}</div>
-            <div class="signature-caption">Panitia SPMB</div>
+            <div class="signature-caption">{{ $kepalaJabatan }}</div>
             <div class="signature-image-wrap">
-                <img src="{{ asset('images/ttdketua.png') }}" class="signature-image" alt="Tanda tangan panitia">
+                @if($kepalaTtdPath)
+                    <img src="{{ asset($kepalaTtdPath) }}" class="signature-image" alt="Tanda tangan {{ $kepalaNama }}">
+                @endif
             </div>
-            <div class="signature-name">Panitia SPMB</div>
+            <div class="signature-name">{{ $kepalaNama }}</div>
+            @if($kepalaNip)
+                <div>NIP. {{ $kepalaNip }}</div>
+            @endif
         </div>
     </div>
 
     <div class="notes">
         <div class="notes-title">Perhatian:</div>
         <ol>
-            <li>Peserta wajib mengikuti tahap wawancara dan pemetaan jurusan sesuai jadwal yang tercantum pada kartu ini.</li>
-            <li>Peserta wajib mencetak dan membawa kartu pendaftaran sebagai bukti keikutsertaan.</li>
-            <li>Peserta wajib mengenakan seragam SMP lengkap dan berpenampilan rapi.</li>
+            @forelse($catatanKartu as $catatan)
+                <li>{{ $catatan }}</li>
+            @empty
+                <li>Peserta wajib mengikuti tahap wawancara dan pemetaan jurusan sesuai jadwal yang tercantum pada kartu ini.</li>
+            @endforelse
         </ol>
     </div>
 </main>

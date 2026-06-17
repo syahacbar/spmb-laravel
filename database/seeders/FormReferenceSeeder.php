@@ -258,63 +258,65 @@ class FormReferenceSeeder extends Seeder
             );
         }
 
-        $wilayah = [
-            'Papua Barat' => [
-                'Teluk Bintuni' => [
-                    'Bintuni' => ['Bintuni Timur', 'Bintuni Barat'],
-                    'Manimeri' => ['Bumi Saniari', 'Banjar Ausoy'],
+        if (DB::table('ref_wilayah_provinsi')->whereNotNull('kode')->doesntExist()) {
+            $wilayah = [
+                'Papua Barat' => [
+                    'Teluk Bintuni' => [
+                        'Bintuni' => ['Bintuni Timur', 'Bintuni Barat'],
+                        'Manimeri' => ['Bumi Saniari', 'Banjar Ausoy'],
+                    ],
+                    'Manokwari' => [
+                        'Manokwari Barat' => ['Padarni', 'Wosi'],
+                    ],
                 ],
-                'Manokwari' => [
-                    'Manokwari Barat' => ['Padarni', 'Wosi'],
+                'Papua' => [
+                    'Jayapura' => [
+                        'Heram' => ['Waena', 'Yabansai'],
+                    ],
                 ],
-            ],
-            'Papua' => [
-                'Jayapura' => [
-                    'Heram' => ['Waena', 'Yabansai'],
-                ],
-            ],
-        ];
+            ];
 
-        $provinsiOrder = 1;
+            $provinsiOrder = 1;
 
-        foreach ($wilayah as $namaProvinsi => $kabupatenList) {
-            DB::table('ref_wilayah_provinsi')->updateOrInsert(
-                ['nama' => $namaProvinsi],
-                ['urutan' => $provinsiOrder++, 'created_at' => now(), 'updated_at' => now()],
-            );
-
-            $provinsiId = DB::table('ref_wilayah_provinsi')->where('nama', $namaProvinsi)->value('id');
-            $kabupatenOrder = 1;
-
-            foreach ($kabupatenList as $namaKabupaten => $kecamatanList) {
-                DB::table('ref_wilayah_kabupaten')->updateOrInsert(
-                    ['provinsi_id' => $provinsiId, 'nama' => $namaKabupaten],
-                    ['urutan' => $kabupatenOrder++, 'created_at' => now(), 'updated_at' => now()],
+            foreach ($wilayah as $namaProvinsi => $kabupatenList) {
+                DB::table('ref_wilayah_provinsi')->updateOrInsert(
+                    ['nama' => $namaProvinsi],
+                    ['urutan' => $provinsiOrder++, 'created_at' => now(), 'updated_at' => now()],
                 );
 
-                $kabupatenId = DB::table('ref_wilayah_kabupaten')
-                    ->where('provinsi_id', $provinsiId)
-                    ->where('nama', $namaKabupaten)
-                    ->value('id');
-                $kecamatanOrder = 1;
+                $provinsiId = DB::table('ref_wilayah_provinsi')->where('nama', $namaProvinsi)->value('id');
+                $kabupatenOrder = 1;
 
-                foreach ($kecamatanList as $namaKecamatan => $kelurahanList) {
-                    DB::table('ref_wilayah_kecamatan')->updateOrInsert(
-                        ['kabupaten_id' => $kabupatenId, 'nama' => $namaKecamatan],
-                        ['urutan' => $kecamatanOrder++, 'created_at' => now(), 'updated_at' => now()],
+                foreach ($kabupatenList as $namaKabupaten => $kecamatanList) {
+                    DB::table('ref_wilayah_kabupaten')->updateOrInsert(
+                        ['provinsi_id' => $provinsiId, 'nama' => $namaKabupaten],
+                        ['urutan' => $kabupatenOrder++, 'created_at' => now(), 'updated_at' => now()],
                     );
 
-                    $kecamatanId = DB::table('ref_wilayah_kecamatan')
-                        ->where('kabupaten_id', $kabupatenId)
-                        ->where('nama', $namaKecamatan)
+                    $kabupatenId = DB::table('ref_wilayah_kabupaten')
+                        ->where('provinsi_id', $provinsiId)
+                        ->where('nama', $namaKabupaten)
                         ->value('id');
-                    $kelurahanOrder = 1;
+                    $kecamatanOrder = 1;
 
-                    foreach ($kelurahanList as $namaKelurahan) {
-                        DB::table('ref_wilayah_kelurahan')->updateOrInsert(
-                            ['kecamatan_id' => $kecamatanId, 'nama' => $namaKelurahan],
-                            ['urutan' => $kelurahanOrder++, 'created_at' => now(), 'updated_at' => now()],
+                    foreach ($kecamatanList as $namaKecamatan => $kelurahanList) {
+                        DB::table('ref_wilayah_kecamatan')->updateOrInsert(
+                            ['kabupaten_id' => $kabupatenId, 'nama' => $namaKecamatan],
+                            ['urutan' => $kecamatanOrder++, 'created_at' => now(), 'updated_at' => now()],
                         );
+
+                        $kecamatanId = DB::table('ref_wilayah_kecamatan')
+                            ->where('kabupaten_id', $kabupatenId)
+                            ->where('nama', $namaKecamatan)
+                            ->value('id');
+                        $kelurahanOrder = 1;
+
+                        foreach ($kelurahanList as $namaKelurahan) {
+                            DB::table('ref_wilayah_kelurahan')->updateOrInsert(
+                                ['kecamatan_id' => $kecamatanId, 'nama' => $namaKelurahan],
+                                ['urutan' => $kelurahanOrder++, 'created_at' => now(), 'updated_at' => now()],
+                            );
+                        }
                     }
                 }
             }

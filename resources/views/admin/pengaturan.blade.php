@@ -1,19 +1,295 @@
 <x-layouts.app :pengguna="$pengguna" title="Pengaturan SPMB">
+    <style>
+        .settings-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 1rem;
+        }
+        .settings-section-title {
+            color: #172033;
+            font-size: 1rem;
+            font-weight: 900;
+            margin: 0;
+        }
+        .settings-section-subtitle {
+            color: #667085;
+            font-size: .88rem;
+            margin: .2rem 0 0;
+        }
+        .signature-preview {
+            width: 180px;
+            height: 84px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px dashed #bfdbfe;
+            border-radius: .5rem;
+            background: #eff6ff;
+        }
+        .signature-preview img {
+            max-width: 160px;
+            max-height: 64px;
+            object-fit: contain;
+        }
+        .settings-table td,
+        .settings-table th {
+            min-width: 130px;
+        }
+        .settings-table .narrow {
+            min-width: 92px;
+            width: 92px;
+        }
+        .settings-table .wide {
+            min-width: 240px;
+        }
+        .primary-contact {
+            border-left: 4px solid #16a34a;
+        }
+    </style>
+
     <div class="page-title">
         <div>
             <h3 class="fw-bold">Pengaturan SPMB</h3>
-            <div class="text-muted">Kelola pengaturan website dan alur layanan SPMB.</div>
+            <div class="text-muted">Kelola kartu pendaftaran, kuota program, dan kontak panitia.</div>
         </div>
     </div>
 
-    <div class="card shadow-sm">
-        <div class="card-body p-4">
-            <div class="text-muted small text-uppercase fw-bold mb-2">Dalam Pengembangan</div>
-            <h5 class="fw-bold mb-2">Pusat pengaturan SPMB akan disiapkan di halaman ini.</h5>
-            <p class="text-muted mb-0">
-                Nanti halaman ini dapat digunakan untuk mengatur informasi website, kontak panitia,
-                jadwal kegiatan, tahun pelajaran, dan pengaturan lain yang dibutuhkan panitia.
-            </p>
-        </div>
+    <div class="settings-grid">
+        <section class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="settings-section-title">Kartu Pendaftaran & Kepala Sekolah</h4>
+                <p class="settings-section-subtitle">Data ini dipakai untuk nomor kartu, jadwal, catatan, dan tanda tangan pada cetak PDF/kartu.</p>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ route('admin.pengaturan.identitas') }}" enctype="multipart/form-data" class="row g-3">
+                    @csrf
+                    <div class="col-md-3">
+                        <label class="form-label">Tahun Pendaftaran</label>
+                        <input type="text" name="tahun_pendaftaran" value="{{ old('tahun_pendaftaran', $settings['tahun_pendaftaran']) }}" class="form-control" maxlength="4" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tahun Pelajaran</label>
+                        <input type="text" name="tahun_pelajaran" value="{{ old('tahun_pelajaran', $settings['tahun_pelajaran']) }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Nama Penandatangan</label>
+                        <input type="text" name="kepala_nama" value="{{ old('kepala_nama', $settings['kepala_nama']) }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">NIP Penandatangan</label>
+                        <input type="text" name="kepala_nip" value="{{ old('kepala_nip', $settings['kepala_nip']) }}" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Jabatan Penandatangan</label>
+                        <input type="text" name="kepala_jabatan" value="{{ old('kepala_jabatan', $settings['kepala_jabatan']) }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">TTD Digital</label>
+                        <input type="file" name="kepala_ttd" class="form-control" accept="image/png,image/jpeg,image/webp">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Tanggal Wawancara</label>
+                        <input type="text" name="tanggal_tes" value="{{ old('tanggal_tes', $settings['tanggal_tes']) }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Waktu Wawancara</label>
+                        <input type="text" name="waktu_tes" value="{{ old('waktu_tes', $settings['waktu_tes']) }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Tempat Wawancara</label>
+                        <input type="text" name="tempat_tes" value="{{ old('tempat_tes', $settings['tempat_tes']) }}" class="form-control" required>
+                    </div>
+                    <div class="col-lg-8">
+                        <label class="form-label">Catatan Kartu</label>
+                        <textarea name="catatan_kartu" class="form-control" rows="4" required>{{ old('catatan_kartu', $settings['catatan_kartu']) }}</textarea>
+                    </div>
+                    <div class="col-lg-4">
+                        <label class="form-label">Preview TTD Saat Ini</label>
+                        <div class="signature-preview">
+                            @if($settings['kepala_ttd_path'])
+                                <img src="{{ asset($settings['kepala_ttd_path']) }}" alt="Tanda tangan digital">
+                            @else
+                                <span class="text-muted small">Belum ada TTD</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary">Simpan Pengaturan Kartu</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="settings-section-title">Kuota Program Keahlian</h4>
+                <p class="settings-section-subtitle">Kuota aktif dipakai di dashboard admin dan pilihan program pada formulir registrasi.</p>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ route('admin.pengaturan.program.update') }}">
+                    @csrf
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle settings-table">
+                            <thead>
+                            <tr>
+                                <th class="wide">Program</th>
+                                <th>Singkatan</th>
+                                <th class="narrow">Kuota</th>
+                                <th class="narrow">Urutan</th>
+                                <th class="wide">Alias</th>
+                                <th class="narrow">Aktif</th>
+                                <th class="narrow">Aksi</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @foreach($programs as $program)
+                                <tr>
+                                    <td>
+                                        <input type="text" name="programs[{{ $program->id }}][nama]" value="{{ old("programs.$program->id.nama", $program->nama) }}" class="form-control" required>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="programs[{{ $program->id }}][singkatan]" value="{{ old("programs.$program->id.singkatan", $program->singkatan) }}" class="form-control">
+                                    </td>
+                                    <td>
+                                        <input type="number" name="programs[{{ $program->id }}][kuota]" value="{{ old("programs.$program->id.kuota", $program->kuota) }}" class="form-control" min="0" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" name="programs[{{ $program->id }}][urutan]" value="{{ old("programs.$program->id.urutan", $program->urutan) }}" class="form-control" min="0" required>
+                                    </td>
+                                    <td>
+                                        <textarea name="programs[{{ $program->id }}][aliases]" class="form-control" rows="2">{{ old("programs.$program->id.aliases", implode("\n", $program->aliases ?? [])) }}</textarea>
+                                    </td>
+                                    <td class="text-center">
+                                        <input type="hidden" name="programs[{{ $program->id }}][is_active]" value="0">
+                                        <input type="checkbox" name="programs[{{ $program->id }}][is_active]" value="1" class="form-check-input" @checked(old("programs.$program->id.is_active", $program->is_active))>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-outline-danger btn-sm" type="submit" form="hapusProgram{{ $program->id }}" data-confirm="Hapus program keahlian ini?">Hapus</button>
+                                    </td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <button class="btn btn-primary">Simpan Kuota Program</button>
+                </form>
+
+                @foreach($programs as $program)
+                    <form id="hapusProgram{{ $program->id }}" method="post" action="{{ route('admin.pengaturan.program.destroy', $program) }}" class="d-none">
+                        @csrf
+                        @method('delete')
+                    </form>
+                @endforeach
+
+                <hr>
+
+                <form method="post" action="{{ route('admin.pengaturan.program.store') }}" class="row g-3 align-items-end">
+                    @csrf
+                    <div class="col-lg-4">
+                        <label class="form-label">Tambah Program</label>
+                        <input type="text" name="nama" value="{{ old('nama') }}" class="form-control" placeholder="Nama program keahlian">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Singkatan</label>
+                        <input type="text" name="singkatan" value="{{ old('singkatan') }}" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Kuota</label>
+                        <input type="number" name="kuota" value="{{ old('kuota', 0) }}" class="form-control" min="0">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Urutan</label>
+                        <input type="number" name="urutan" value="{{ old('urutan', $programs->max('urutan') + 1) }}" class="form-control" min="0">
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button class="btn btn-outline-primary">Tambah</button>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Alias Program Baru</label>
+                        <textarea name="aliases" class="form-control" rows="2" placeholder="Satu alias per baris jika ada">{{ old('aliases') }}</textarea>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="card shadow-sm">
+            <div class="card-header">
+                <h4 class="settings-section-title">Kontak Panitia</h4>
+                <p class="settings-section-subtitle">Kontak utama dipakai untuk tombol WhatsApp di landing page dan halaman daftar.</p>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    @foreach($contacts as $contact)
+                        <div class="col-lg-6">
+                            <div class="border rounded p-3 h-100 {{ $contact->is_primary ? 'primary-contact' : '' }}">
+                                <form method="post" action="{{ route('admin.pengaturan.kontak.update', $contact) }}" class="row g-2">
+                                    @csrf
+                                    @method('put')
+                                    <div class="col-md-6">
+                                        <label class="form-label">Nama</label>
+                                        <input type="text" name="nama" value="{{ old("kontak.$contact->id.nama", $contact->nama) }}" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Label</label>
+                                        <input type="text" name="label" value="{{ old("kontak.$contact->id.label", $contact->label) }}" class="form-control">
+                                    </div>
+                                    <div class="col-md-8">
+                                        <label class="form-label">Nomor WhatsApp</label>
+                                        <input type="text" name="nomor_whatsapp" value="{{ old("kontak.$contact->id.nomor_whatsapp", $contact->nomor_whatsapp) }}" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <div class="form-check">
+                                            <input type="checkbox" name="is_active" value="1" class="form-check-input" id="kontakAktif{{ $contact->id }}" @checked($contact->is_active)>
+                                            <label class="form-check-label" for="kontakAktif{{ $contact->id }}">Aktif</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 d-flex flex-wrap gap-2">
+                                        <button class="btn btn-outline-primary btn-sm">Simpan</button>
+                                        @if(! $contact->is_primary)
+                                            <button class="btn btn-outline-success btn-sm" type="submit" form="kontakUtama{{ $contact->id }}">Jadikan Utama</button>
+                                        @else
+                                            <span class="badge text-bg-success align-self-center">Kontak Utama</span>
+                                        @endif
+                                        <button class="btn btn-outline-danger btn-sm" type="submit" form="hapusKontak{{ $contact->id }}" data-confirm="Hapus kontak panitia ini?">Hapus</button>
+                                    </div>
+                                </form>
+                                <form id="kontakUtama{{ $contact->id }}" method="post" action="{{ route('admin.pengaturan.kontak.primary', $contact) }}" class="d-none">@csrf</form>
+                                <form id="hapusKontak{{ $contact->id }}" method="post" action="{{ route('admin.pengaturan.kontak.destroy', $contact) }}" class="d-none">
+                                    @csrf
+                                    @method('delete')
+                                </form>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                <hr>
+
+                <form method="post" action="{{ route('admin.pengaturan.kontak.store') }}" class="row g-3 align-items-end">
+                    @csrf
+                    <div class="col-md-3">
+                        <label class="form-label">Nama Kontak</label>
+                        <input type="text" name="nama" value="{{ old('nama') }}" class="form-control" placeholder="Nama admin/petugas">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Label</label>
+                        <input type="text" name="label" value="{{ old('label') }}" class="form-control" placeholder="Admin Pendaftaran">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Nomor WhatsApp</label>
+                        <input type="text" name="nomor_whatsapp" value="{{ old('nomor_whatsapp') }}" class="form-control" placeholder="62812...">
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-check">
+                            <input type="checkbox" name="is_primary" value="1" class="form-check-input" id="kontakUtamaBaru">
+                            <label class="form-check-label" for="kontakUtamaBaru">Jadikan utama</label>
+                        </div>
+                    </div>
+                    <div class="col-md-1 d-grid">
+                        <button class="btn btn-primary">Tambah</button>
+                    </div>
+                </form>
+            </div>
+        </section>
     </div>
 </x-layouts.app>

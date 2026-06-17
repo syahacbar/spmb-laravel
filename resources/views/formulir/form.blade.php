@@ -1,14 +1,8 @@
 <x-layouts.app :pengguna="$pengguna" title="Formulir Registrasi">
     @php
         $isEdit = $formulir->exists;
-        $programs = [
-            'Akuntansi dan Keuangan Lembaga (AKL)',
-            'Teknik Kendaraan Ringan (TKR)',
-            'Teknik Komputer dan Jaringan (TKJ)',
-            'Desain Komunikasi Visual (DKV)',
-            'Teknik Sepeda Motor (TSM)'
-        ];
-        $programsSecond = array_values(array_filter($programs, fn ($program) => $program !== 'Teknik Komputer dan Jaringan (TKJ)'));
+        $programs = $programs ?? [];
+        $programsSecond = $programsSecond ?? [];
         $pekerjaanAyah = ['PNS', 'TNI/Polri', 'Pedagang', 'Petani', 'Nelayan', 'Buruh Bangunan', 'Kontraktor', 'Pegawai Swasta', 'Wiraswasta', 'Lainnya', 'Tidak Ada Pekerjaan'];
         $pekerjaanIbu = ['PNS', 'Ibu Rumah Tangga', 'Pedagang', 'Petani', 'Pegawai Swasta', 'Wiraswasta',  'Lainnya', 'Tidak Ada'];
         $tanggalLahirMaksimal = now()->subYears(13)->format('Y-m-d');

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\CalonSiswa;
 use App\Models\Formulir;
 use App\Models\Pengguna;
+use App\Models\PengaturanSpmb;
+use App\Models\ProgramKeahlian;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -211,7 +213,11 @@ class FormulirController extends Controller
             return redirect()->route('formulir.periksa', $formulir)->with('warning', 'Kartu pendaftaran dapat dicetak setelah formulir dikirim final.');
         }
 
-        return view('formulir.cetak', compact('pengguna', 'formulir'));
+        return view('formulir.cetak', [
+            'pengguna' => $pengguna,
+            'formulir' => $formulir,
+            'settings' => PengaturanSpmb::allSettings(),
+        ]);
     }
 
     private function validatedData(Request $request, bool $requireFiles = true, ?string $nisn = null): array
@@ -253,8 +259,8 @@ class FormulirController extends Controller
             'alamat_ortu_kabupaten' => [$parentAddressSame ? 'nullable' : 'required', 'string', 'max:100'],
             'alamat_ortu_kecamatan' => [$parentAddressSame ? 'nullable' : 'required', 'string', 'max:100'],
             'alamat_ortu_kelurahan' => [$parentAddressSame ? 'nullable' : 'required', 'string', 'max:100'],
-            'program_keahlian_1' => ['required', 'string', 'max:100', 'different:program_keahlian_2'],
-            'program_keahlian_2' => ['required', 'string', 'max:100', 'not_in:Teknik Komputer dan Jaringan (TKJ)'],
+            'program_keahlian_1' => ['required', 'string', 'max:100', 'different:program_keahlian_2', Rule::in($this->programOptions())],
+            'program_keahlian_2' => ['required', 'string', 'max:100', 'not_in:Teknik Komputer dan Jaringan (TKJ)', Rule::in($this->programSecondOptions())],
             'surat_keterangan_lulus' => [$requiredFileRule, 'file', 'mimes:pdf', 'max:1024'],
             'kartu_keluarga' => [$requiredFileRule, 'file', 'mimes:pdf', 'max:1024'],
             'foto_selfie' => [$requiredFileRule, 'image', 'mimes:jpg,jpeg,png', 'max:1024'],
@@ -339,6 +345,8 @@ class FormulirController extends Controller
             ]);
 
         return [
+            'programs' => $this->programOptions(),
+            'programsSecond' => $this->programSecondOptions(),
             'kecamatanOptions' => $kecamatan->pluck('nama')->all(),
             'kelurahanOptionsByKecamatan' => $kelurahan
                 ->groupBy('kecamatan')
@@ -381,6 +389,23 @@ class FormulirController extends Controller
             'tanggal_lahir' => $calonSiswa->tanggal_lahir,
             'asal_sekolah' => $calonSiswa->asal_sekolah,
         ];
+    }
+
+    private function programOptions(): array
+    {
+        return ProgramKeahlian::query()
+            ->where('is_active', true)
+            ->ordered()
+            ->pluck('nama')
+            ->all();
+    }
+
+    private function programSecondOptions(): array
+    {
+        return array_values(array_filter(
+            $this->programOptions(),
+            fn (string $program) => $program !== 'Teknik Komputer dan Jaringan (TKJ)',
+        ));
     }
 
     private function authorizeFormulir($pengguna, Formulir $formulir): void

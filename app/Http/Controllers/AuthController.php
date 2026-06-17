@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CalonSiswa;
+use App\Models\KontakPanitia;
 use App\Models\Pengguna;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -243,7 +244,8 @@ class AuthController extends Controller
 
     private function panitiaWhatsapp(): string
     {
-        return (string) config('services.spmb.panitia_whatsapp');
+        return KontakPanitia::primary()?->nomor_whatsapp
+            ?: (string) config('services.spmb.panitia_whatsapp');
     }
 
     private function panitiaWhatsappUrl(): string

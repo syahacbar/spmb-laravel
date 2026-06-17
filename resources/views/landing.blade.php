@@ -1,5 +1,5 @@
 @php
-    $whatsapp = (string) config('services.spmb.panitia_whatsapp', '6281111110002');
+    $whatsapp = (string) ($whatsapp ?? config('services.spmb.panitia_whatsapp', '6281111110002'));
     $whatsappPhone = preg_replace('/\D+/', '', $whatsapp);
     $whatsappMessage = 'Halo Panitia SPMB SMK Negeri 1 Bintuni, saya ingin bertanya tentang pendaftaran SPMB 2026.';
     $whatsappUrl = 'https://wa.me/'.$whatsappPhone.'?text='.rawurlencode($whatsappMessage);

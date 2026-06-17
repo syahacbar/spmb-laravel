@@ -37,6 +37,14 @@ Route::middleware('spmb.auth')->group(function (): void {
         Route::get('/pengguna', [AdminController::class, 'pengguna'])->name('pengguna');
         Route::post('/pengguna', [AdminController::class, 'storePengguna'])->name('pengguna.store');
         Route::get('/pengaturan', [AdminController::class, 'pengaturan'])->name('pengaturan');
+        Route::post('/pengaturan/identitas', [AdminController::class, 'updateIdentitas'])->name('pengaturan.identitas');
+        Route::post('/pengaturan/program-keahlian', [AdminController::class, 'updateProgramKeahlian'])->name('pengaturan.program.update');
+        Route::post('/pengaturan/program-keahlian/tambah', [AdminController::class, 'storeProgramKeahlian'])->name('pengaturan.program.store');
+        Route::delete('/pengaturan/program-keahlian/{program}', [AdminController::class, 'destroyProgramKeahlian'])->name('pengaturan.program.destroy');
+        Route::post('/pengaturan/kontak-panitia', [AdminController::class, 'storeKontakPanitia'])->name('pengaturan.kontak.store');
+        Route::put('/pengaturan/kontak-panitia/{kontak}', [AdminController::class, 'updateKontakPanitia'])->name('pengaturan.kontak.update');
+        Route::post('/pengaturan/kontak-panitia/{kontak}/utama', [AdminController::class, 'setKontakPanitiaUtama'])->name('pengaturan.kontak.primary');
+        Route::delete('/pengaturan/kontak-panitia/{kontak}', [AdminController::class, 'destroyKontakPanitia'])->name('pengaturan.kontak.destroy');
         Route::post('/pengguna/{pengguna}/verifikasi', [AdminController::class, 'verifikasiPengguna'])->name('pengguna.verifikasi');
         Route::post('/pengguna/{pengguna}/toggle-active', [AdminController::class, 'togglePenggunaAktif'])->name('pengguna.toggle-active');
         Route::post('/pengguna/{pengguna}/reset-password', [AdminController::class, 'resetPasswordPengguna'])->name('pengguna.reset-password');

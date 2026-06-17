@@ -3,9 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Formulir;
+use App\Models\KontakPanitia;
 use App\Models\Pengguna;
+use App\Models\PengaturanSpmb;
+use App\Models\ProgramKeahlian;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
@@ -34,7 +38,159 @@ class AdminController extends Controller
     {
         return view('admin.pengaturan', [
             'pengguna' => $request->attributes->get('pengguna'),
+            'settings' => PengaturanSpmb::allSettings(),
+            'programs' => ProgramKeahlian::query()->ordered()->get(),
+            'contacts' => KontakPanitia::query()->orderByDesc('is_primary')->orderBy('id')->get(),
         ]);
+    }
+
+    public function updateIdentitas(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'tahun_pendaftaran' => ['required', 'digits:4'],
+            'tahun_pelajaran' => ['required', 'string', 'max:20'],
+            'kepala_nama' => ['required', 'string', 'max:100'],
+            'kepala_nip' => ['nullable', 'string', 'max:50'],
+            'kepala_jabatan' => ['required', 'string', 'max:100'],
+            'tanggal_tes' => ['required', 'string', 'max:100'],
+            'waktu_tes' => ['required', 'string', 'max:100'],
+            'tempat_tes' => ['required', 'string', 'max:150'],
+            'catatan_kartu' => ['required', 'string', 'max:1000'],
+            'kepala_ttd' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:1024'],
+        ], [
+            'kepala_ttd.image' => 'Tanda tangan digital harus berupa gambar.',
+            'kepala_ttd.max' => 'Ukuran tanda tangan digital maksimal 1 MB.',
+        ]);
+
+        unset($data['kepala_ttd']);
+
+        if ($request->hasFile('kepala_ttd')) {
+            $dir = public_path('uploads/pengaturan');
+
+            if (! is_dir($dir)) {
+                mkdir($dir, 0775, true);
+            }
+
+            $file = $request->file('kepala_ttd');
+            $name = 'ttd_kepala_'.time().'.'.$file->extension();
+            $file->move($dir, $name);
+            $data['kepala_ttd_path'] = 'uploads/pengaturan/'.$name;
+        }
+
+        PengaturanSpmb::setMany($data);
+
+        return back()->with('success', 'Identitas dan pengaturan kartu pendaftaran berhasil diperbarui.');
+    }
+
+    public function updateProgramKeahlian(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'programs' => ['required', 'array'],
+            'programs.*.nama' => ['required', 'string', 'max:100'],
+            'programs.*.singkatan' => ['nullable', 'string', 'max:20'],
+            'programs.*.kuota' => ['required', 'integer', 'min:0', 'max:10000'],
+            'programs.*.aliases' => ['nullable', 'string', 'max:500'],
+            'programs.*.urutan' => ['required', 'integer', 'min:0', 'max:10000'],
+            'programs.*.is_active' => ['nullable', 'boolean'],
+        ]);
+
+        foreach ($data['programs'] as $id => $programData) {
+            $program = ProgramKeahlian::findOrFail($id);
+
+            $program->update([
+                'nama' => $programData['nama'],
+                'singkatan' => $programData['singkatan'] ?? null,
+                'kuota' => $programData['kuota'],
+                'aliases' => $this->aliasesFromInput($programData['aliases'] ?? ''),
+                'urutan' => $programData['urutan'],
+                'is_active' => (bool) ($programData['is_active'] ?? false),
+            ]);
+        }
+
+        return back()->with('success', 'Kuota program keahlian berhasil diperbarui.');
+    }
+
+    public function storeProgramKeahlian(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'nama' => ['required', 'string', 'max:100', 'unique:tb_program_keahlian,nama'],
+            'singkatan' => ['nullable', 'string', 'max:20'],
+            'kuota' => ['required', 'integer', 'min:0', 'max:10000'],
+            'aliases' => ['nullable', 'string', 'max:500'],
+            'urutan' => ['required', 'integer', 'min:0', 'max:10000'],
+        ]);
+
+        ProgramKeahlian::create([
+            'nama' => $data['nama'],
+            'singkatan' => $data['singkatan'] ?? null,
+            'kuota' => $data['kuota'],
+            'aliases' => $this->aliasesFromInput($data['aliases'] ?? ''),
+            'urutan' => $data['urutan'],
+            'is_active' => true,
+        ]);
+
+        return back()->with('success', 'Program keahlian berhasil ditambahkan.');
+    }
+
+    public function destroyProgramKeahlian(ProgramKeahlian $program): RedirectResponse
+    {
+        $program->delete();
+
+        return back()->with('success', 'Program keahlian berhasil dihapus.');
+    }
+
+    public function storeKontakPanitia(Request $request): RedirectResponse
+    {
+        $data = $this->validatedContact($request);
+        $data['nomor_whatsapp'] = $this->normalizeWhatsapp($data['nomor_whatsapp']);
+        $data['is_active'] = true;
+        $data['is_primary'] = $request->boolean('is_primary');
+
+        DB::transaction(function () use ($data): void {
+            if ($data['is_primary']) {
+                KontakPanitia::query()->update(['is_primary' => false]);
+            }
+
+            KontakPanitia::create($data);
+        });
+
+        return back()->with('success', 'Kontak panitia berhasil ditambahkan.');
+    }
+
+    public function updateKontakPanitia(Request $request, KontakPanitia $kontak): RedirectResponse
+    {
+        $data = $this->validatedContact($request);
+        $data['nomor_whatsapp'] = $this->normalizeWhatsapp($data['nomor_whatsapp']);
+        $data['is_active'] = $request->boolean('is_active');
+
+        $kontak->update($data);
+
+        return back()->with('success', 'Kontak panitia berhasil diperbarui.');
+    }
+
+    public function setKontakPanitiaUtama(KontakPanitia $kontak): RedirectResponse
+    {
+        DB::transaction(function () use ($kontak): void {
+            KontakPanitia::query()->update(['is_primary' => false]);
+            $kontak->update([
+                'is_primary' => true,
+                'is_active' => true,
+            ]);
+        });
+
+        return back()->with('success', 'Kontak utama WhatsApp berhasil dipilih.');
+    }
+
+    public function destroyKontakPanitia(KontakPanitia $kontak): RedirectResponse
+    {
+        $wasPrimary = $kontak->is_primary;
+        $kontak->delete();
+
+        if ($wasPrimary) {
+            KontakPanitia::query()->where('is_active', true)->orderBy('id')->first()?->update(['is_primary' => true]);
+        }
+
+        return back()->with('success', 'Kontak panitia berhasil dihapus.');
     }
 
     public function storePengguna(Request $request): RedirectResponse
@@ -136,5 +292,40 @@ class AdminController extends Controller
         if ($pengguna->level === 'Administrator') {
             abort(403);
         }
+    }
+
+    private function aliasesFromInput(string $value): array
+    {
+        return collect(preg_split('/[\r\n,]+/', $value))
+            ->map(fn (string $alias) => trim($alias))
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function validatedContact(Request $request): array
+    {
+        return $request->validate([
+            'nama' => ['required', 'string', 'max:100'],
+            'label' => ['nullable', 'string', 'max:100'],
+            'nomor_whatsapp' => ['required', 'regex:/^(\+?62|0|8)[0-9]{8,13}$/'],
+        ], [
+            'nomor_whatsapp.regex' => 'Nomor WhatsApp harus diawali 62, +62, 0, atau 8 dan berisi angka yang valid.',
+        ]);
+    }
+
+    private function normalizeWhatsapp(string $phone): string
+    {
+        $digits = preg_replace('/\D+/', '', $phone);
+
+        if (str_starts_with($digits, '0')) {
+            return '62'.substr($digits, 1);
+        }
+
+        if (str_starts_with($digits, '8')) {
+            return '62'.$digits;
+        }
+
+        return $digits;
     }
 }

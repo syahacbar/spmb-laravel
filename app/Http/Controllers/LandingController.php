@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CalonSiswa;
+use App\Models\KontakPanitia;
 use App\Models\Pengguna;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -15,8 +16,12 @@ class LandingController extends Controller
     public function index(Request $request): View
     {
         $this->generateStatusCaptcha($request);
+        $kontakPanitia = KontakPanitia::primary();
 
-        return view('landing');
+        return view('landing', [
+            'whatsapp' => $kontakPanitia?->nomor_whatsapp ?: (string) config('services.spmb.panitia_whatsapp', '6281111110002'),
+            'whatsappLabel' => $kontakPanitia?->label ?: 'Panitia',
+        ]);
     }
 
     public function checkStatus(Request $request): RedirectResponse|JsonResponse

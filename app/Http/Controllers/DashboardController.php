@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Formulir;
 use App\Models\Pengguna;
+use App\Models\ProgramKeahlian;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -12,13 +13,7 @@ class DashboardController extends Controller
     public function index(Request $request): View
     {
         $pengguna = $request->attributes->get('pengguna');
-        $programs = [
-            'Akuntansi dan Keuangan Lembaga (AKL)' => ['kuota' => 72, 'aliases' => ['Akuntansi dan Keuangan Lembaga']],
-            'Teknik Kendaraan Ringan (TKR)' => ['kuota' => 36, 'aliases' => ['Teknik Kendaraan Ringan']],
-            'Teknik Komputer dan Jaringan (TKJ)' => ['kuota' => 36, 'aliases' => ['Teknik Komputer dan Jaringan', 'Teknik Jaringan dan Telekomunikasi']],
-            'Desain Komunikasi Visual (DKV)' => ['kuota' => 36, 'aliases' => ['Desain Komunikasi Visual']],
-            'Teknik Sepeda Motor (TSM)' => ['kuota' => 36, 'aliases' => ['Teknik Sepeda Motor']],
-        ];
+        $programs = ProgramKeahlian::query()->where('is_active', true)->ordered()->get();
         $programCounts = $pengguna->level === 'Administrator'
             ? $this->programCounts($programs)
             : collect();
@@ -37,21 +32,21 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function programCounts(array $programs)
+    private function programCounts($programs)
     {
         $submitted = Formulir::where('status', 'submitted')
             ->get(['program_keahlian_1', 'program_keahlian_2']);
 
-        return collect($programs)->map(function (array $config, string $program) use ($submitted): array {
-            $kuota = (int) $config['kuota'];
-            $aliases = $config['aliases'];
-            $acceptedNames = collect([$program, ...$aliases])->map(fn (string $name) => $this->normalizeProgramName($name))->all();
+        return collect($programs)->map(function (ProgramKeahlian $program) use ($submitted): array {
+            $kuota = (int) $program->kuota;
+            $aliases = $program->aliases ?? [];
+            $acceptedNames = collect([$program->nama, ...$aliases])->map(fn (string $name) => $this->normalizeProgramName($name))->all();
             $minatA = $submitted->filter(fn (Formulir $formulir) => in_array($this->normalizeProgramName($formulir->program_keahlian_1), $acceptedNames, true))->count();
             $minatB = $submitted->filter(fn (Formulir $formulir) => in_array($this->normalizeProgramName($formulir->program_keahlian_2), $acceptedNames, true))->count();
             $total = $minatA + $minatB;
 
             return [
-                'nama' => $program,
+                'nama' => $program->nama,
                 'minat_a' => $minatA,
                 'minat_b' => $minatB,
                 'total' => $total,
