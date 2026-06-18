@@ -118,6 +118,26 @@
         .sidebar-link { color: #cbd5e1; display: flex; align-items: center; gap: .65rem; padding: .72rem .85rem; text-decoration: none; border-radius: .5rem; font-weight: 600; }
         .sidebar-link:hover, .sidebar-link.active { background: #243044; color: #fff; }
         .sidebar-link.active { box-shadow: inset 3px 0 0 #ef4444; }
+        .document-preview-frame {
+            width: 100%;
+            height: min(72vh, 760px);
+            border: 0;
+            border-radius: .5rem;
+            background: #f8fafc;
+        }
+        .document-preview-image {
+            display: block;
+            max-width: 100%;
+            max-height: 72vh;
+            margin: auto;
+            border-radius: .5rem;
+        }
+        .download-icon {
+            width: 1rem;
+            height: 1rem;
+            margin-right: .35rem;
+            vertical-align: -.15rem;
+        }
         .app-shell { min-height: calc(100vh - 56px); }
         .sidebar { background: var(--spmb-sidebar); }
         .card { border: 1px solid var(--spmb-line); border-radius: .5rem; }
@@ -812,6 +832,12 @@
         .register-auth-page a {
             color: #1d4ed8;
         }
+        .login-auth-page a.btn-primary,
+        .register-auth-page a.btn-primary,
+        .login-auth-page a.btn-primary:hover,
+        .register-auth-page a.btn-primary:hover {
+            color: #fff;
+        }
         .auth-panel {
             border: 0;
             background: rgba(255, 255, 255, .96);
@@ -1110,6 +1136,29 @@
     </div>
 </div>
 
+<div class="modal fade" id="documentPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="documentPreviewTitle">Preview Berkas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body bg-light" id="documentPreviewBody"></div>
+            <div class="modal-footer">
+                <a href="#" class="btn btn-primary" id="documentDownloadButton">
+                    <svg class="download-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M12 3v12"></path>
+                        <path d="m7 10 5 5 5-5"></path>
+                        <path d="M5 21h14"></path>
+                    </svg>
+                    Unduh Berkas
+                </a>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 @if(request()->routeIs('admin.pengguna', 'admin.pendaftar', 'admin.pengaturan'))
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -1151,6 +1200,50 @@
             confirmedTarget.dataset.confirmed = 'true';
             confirmModal.hide();
             confirmedTarget.click();
+        });
+
+        const documentModalElement = document.getElementById('documentPreviewModal');
+        const documentModalTitle = document.getElementById('documentPreviewTitle');
+        const documentModalBody = document.getElementById('documentPreviewBody');
+        const documentDownloadButton = document.getElementById('documentDownloadButton');
+        const documentModal = documentModalElement ? new bootstrap.Modal(documentModalElement) : null;
+
+        document.querySelectorAll('[data-document-preview]').forEach(function (link) {
+            link.addEventListener('click', function (event) {
+                if (! documentModal || ! documentModalTitle || ! documentModalBody || ! documentDownloadButton) {
+                    return;
+                }
+
+                event.preventDefault();
+                const title = link.dataset.documentTitle || 'Preview Berkas';
+                const type = link.dataset.documentType || 'pdf';
+                const url = link.href;
+
+                documentModalTitle.textContent = title;
+                documentDownloadButton.href = link.dataset.documentDownload || url;
+                documentDownloadButton.setAttribute('download', '');
+                documentModalBody.replaceChildren();
+
+                if (type === 'image') {
+                    const image = document.createElement('img');
+                    image.src = url;
+                    image.alt = title;
+                    image.className = 'document-preview-image';
+                    documentModalBody.appendChild(image);
+                } else {
+                    const frame = document.createElement('iframe');
+                    frame.src = url + '#toolbar=0&navpanes=0';
+                    frame.title = title;
+                    frame.className = 'document-preview-frame';
+                    documentModalBody.appendChild(frame);
+                }
+
+                documentModal.show();
+            });
+        });
+
+        documentModalElement?.addEventListener('hidden.bs.modal', function () {
+            documentModalBody?.replaceChildren();
         });
 
         document.querySelectorAll('[data-password-toggle]').forEach(function (button) {

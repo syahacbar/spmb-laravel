@@ -15,9 +15,9 @@
             $formulir->alamat_ortu_provinsi,
         ])->filter()->implode(', ');
         $documents = [
-            'surat_keterangan_lulus' => ['label' => 'Ijazah / SKL', 'type' => 'PDF', 'preview' => 'pdf'],
-            'kartu_keluarga' => ['label' => 'Kartu Keluarga', 'type' => 'PDF', 'preview' => 'pdf'],
-            'foto_selfie' => ['label' => 'Pas Foto', 'type' => 'Gambar', 'preview' => 'image'],
+            'surat_keterangan_lulus' => ['label' => 'Ijazah / SKL'],
+            'kartu_keluarga' => ['label' => 'Kartu Keluarga'],
+            'foto_selfie' => ['label' => 'Pas Foto'],
         ];
     @endphp
 
@@ -123,21 +123,21 @@
                                     $path = $formulir->{$field};
                                     $fileExists = $formulir->berkasTersedia($field);
                                     $fileUrl = $formulir->berkasUrl($field);
-                                    $isImage = $document['preview'] === 'image' && $fileExists;
-                                    $isPdf = $document['preview'] === 'pdf' && $fileExists;
+                                    $isImage = $fileExists && $formulir->berkasIsImage($field);
+                                    $isPdf = $fileExists && ! $isImage;
                                 @endphp
                                 <div class="col-md-4">
                                     <div class="uploaded-file h-100">
                                         <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
                                             <div>
                                                 <div class="fw-bold">{{ $document['label'] }}</div>
-                                                <div class="small text-muted">{{ $document['type'] }}</div>
+                                                <div class="small text-muted">{{ $isImage ? 'Gambar' : 'PDF' }}</div>
                                             </div>
                                             <span class="badge text-bg-light">{{ $fileExists ? 'Ada' : 'Kosong' }}</span>
                                         </div>
 
                                         @if($isImage)
-                                            <a href="{{ $fileUrl }}" target="_blank" class="d-block mb-2">
+                                            <a href="{{ $fileUrl }}" class="d-block mb-2" data-document-preview data-document-title="{{ $document['label'] }}" data-document-type="image" data-document-download="{{ $formulir->berkasDownloadUrl($field) }}">
                                                 <img src="{{ $fileUrl }}" class="img-fluid border rounded" alt="{{ $document['label'] }}">
                                             </a>
                                         @elseif($isPdf)
@@ -150,7 +150,7 @@
                                         @endif
 
                                         @if($fileExists)
-                                            <a href="{{ $fileUrl }}" target="_blank" class="btn btn-outline-primary btn-sm w-100">Buka Berkas</a>
+                                            <a href="{{ $fileUrl }}" class="btn btn-outline-primary btn-sm w-100" data-document-preview data-document-title="{{ $document['label'] }}" data-document-type="{{ $isImage ? 'image' : 'pdf' }}" data-document-download="{{ $formulir->berkasDownloadUrl($field) }}">Buka Berkas</a>
                                         @endif
                                     </div>
                                 </div>
@@ -188,7 +188,7 @@
                                     $fileExists = $formulir->berkasTersedia($field);
                                 @endphp
                                 @if($fileExists)
-                                    <a href="{{ $formulir->berkasUrl($field) }}" target="_blank">{{ $document['label'] }}</a>
+                                    <a href="{{ $formulir->berkasUrl($field) }}" data-document-preview data-document-title="{{ $document['label'] }}" data-document-type="{{ $formulir->berkasIsImage($field) ? 'image' : 'pdf' }}" data-document-download="{{ $formulir->berkasDownloadUrl($field) }}">{{ $document['label'] }}</a>
                                 @else
                                     <span class="text-muted small">{{ $document['label'] }} belum tersedia</span>
                                 @endif

@@ -27,14 +27,14 @@
             'surat_keterangan_lulus' => [
                 'label' => 'Ijazah / SKL',
                 'description' => 'Ijazah SMP/Sederajat atau Surat Keterangan Lulus.',
-                'hint' => 'Format *.pdf, maksimal 1 MB, tulisan harus jelas dan terbaca.',
-                'accept' => 'application/pdf',
+                'hint' => 'Format PDF, JPG, JPEG, PNG, atau WEBP, maksimal 1 MB. Tulisan harus jelas dan terbaca.',
+                'accept' => '.pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp',
             ],
             'kartu_keluarga' => [
                 'label' => 'Kartu Keluarga',
                 'description' => 'Kartu Keluarga hasil pindai/scan.',
-                'hint' => 'Format *.pdf, maksimal 1 MB, tulisan harus jelas dan terbaca.',
-                'accept' => 'application/pdf',
+                'hint' => 'Format PDF, JPG, JPEG, PNG, atau WEBP, maksimal 1 MB. Tulisan harus jelas dan terbaca.',
+                'accept' => '.pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp',
             ],
             'foto_selfie' => [
                 'label' => 'Pas Foto',
@@ -129,8 +129,8 @@
                             <input type="date" name="tanggal_lahir" value="{{ $hasMasterIdentity ? $calonSiswa->tanggal_lahir->format('Y-m-d') : old('tanggal_lahir', optional($formulir->tanggal_lahir)->format('Y-m-d') ?: $formulir->tanggal_lahir) }}" class="form-control" @unless($hasMasterIdentity) min="{{ $tanggalLahirMinimal }}" max="{{ $tanggalLahirMaksimal }}" @endunless data-field-label="Tanggal lahir" @disabled($hasMasterIdentity) data-open-date-on-focus required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Email Aktif</label>
-                            <input type="email" name="email" value="{{ old('email', $emailAkun) }}" class="form-control" autocomplete="email" required>
+                            <label class="form-label">Email Aktif <span class="text-muted fw-normal">(opsional)</span></label>
+                            <input type="email" name="email" value="{{ old('email', $emailAkun) }}" class="form-control" autocomplete="email">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Nomor HP/WA</label>
@@ -340,7 +340,12 @@
                                         @if($isEdit && $formulir->{$field})
                                             <div class="uploaded-file mb-2">
                                                 <div class="fw-bold small">Berkas saat ini</div>
-                                                <a href="{{ $formulir->berkasUrl($field) }}" target="_blank" class="small text-decoration-none">Lihat berkas</a>
+                                                <a href="{{ $formulir->berkasUrl($field) }}"
+                                                   class="small text-decoration-none"
+                                                   data-document-preview
+                                                   data-document-title="{{ $document['label'] }}"
+                                                   data-document-type="{{ $formulir->berkasIsImage($field) ? 'image' : 'pdf' }}"
+                                                   data-document-download="{{ $formulir->berkasDownloadUrl($field) }}">Lihat berkas</a>
                                             </div>
                                             <div class="small text-muted mb-2">Kosongkan jika tidak ingin mengganti berkas.</div>
                                         @endif
@@ -348,7 +353,7 @@
                                         <div class="input-group upload-file-control">
                                             <label for="upload-{{ $field }}" class="btn btn-outline-primary">Pilih file</label>
                                             <span class="form-control upload-file-name" id="upload-name-{{ $field }}" data-empty-file-text="Belum ada file dipilih">Belum ada file dipilih</span>
-                                            <input type="file" id="upload-{{ $field }}" name="{{ $field }}" class="visually-hidden" accept="{{ $document['accept'] }}" data-file-validation="{{ $field === 'foto_selfie' ? 'image' : 'pdf' }}" data-field-label="{{ $document['label'] }}" data-max-file-size="1048576" data-file-name-target="upload-name-{{ $field }}" @required(! $isEdit)>
+                                            <input type="file" id="upload-{{ $field }}" name="{{ $field }}" class="visually-hidden" accept="{{ $document['accept'] }}" data-file-validation="{{ $field === 'foto_selfie' ? 'image' : 'document' }}" data-field-label="{{ $document['label'] }}" data-max-file-size="1048576" data-file-name-target="upload-name-{{ $field }}" @required(! $isEdit)>
                                         </div>
                                         <div class="document-hint mt-2">{{ $document['hint'] }}</div>
                                     </div>
@@ -658,8 +663,8 @@
                     return false;
                 }
 
-                if (fileKind === 'pdf' && file.type !== 'application/pdf') {
-                    setError(control, label + ' harus berupa file PDF.');
+                if (fileKind === 'document' && ! ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                    setError(control, label + ' harus berupa file PDF, JPG, JPEG, PNG, atau WEBP.');
                     return false;
                 }
 

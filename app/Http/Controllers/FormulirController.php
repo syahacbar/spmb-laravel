@@ -57,7 +57,7 @@ class FormulirController extends Controller
         }
 
         $data = $this->validatedData($request, true, $pengguna->id_pengguna);
-        $this->syncAkunEmail($pengguna->id_pengguna, $data['email']);
+        $this->syncAkunEmail($pengguna->id_pengguna, $data['email'] ?? null);
         unset($data['email']);
 
         $data['nisn'] = $pengguna->id_pengguna;
@@ -156,7 +156,7 @@ class FormulirController extends Controller
         }
 
         $data = $this->validatedData($request, true, $pengguna->id_pengguna);
-        $this->syncAkunEmail($pengguna->id_pengguna, $data['email']);
+        $this->syncAkunEmail($pengguna->id_pengguna, $data['email'] ?? null);
         unset($data['email']);
 
         $data['nisn'] = $pengguna->id_pengguna;
@@ -197,7 +197,7 @@ class FormulirController extends Controller
         $akunPendaftar = Pengguna::find($formulir->nisn);
 
         if ($akunPendaftar) {
-            $this->syncAkunEmail($akunPendaftar->id_pengguna, $data['email']);
+            $this->syncAkunEmail($akunPendaftar->id_pengguna, $data['email'] ?? null);
             $data['hp'] = $akunPendaftar->telpon;
         }
 
@@ -292,7 +292,7 @@ class FormulirController extends Controller
             ];
 
         $data = $request->validate(array_merge($identityRules, [
-            'email' => ['required', 'email', 'max:100', Rule::unique('tb_pengguna', 'email')->ignore($nisn, 'id_pengguna')],
+            'email' => ['nullable', 'email', 'max:100', Rule::unique('tb_pengguna', 'email')->ignore($nisn, 'id_pengguna')],
             'nik' => [
                 'required',
                 'digits:16',
@@ -317,8 +317,8 @@ class FormulirController extends Controller
             'alamat_ortu_kelurahan' => [$parentAddressSame ? 'nullable' : 'required', 'string', 'max:100'],
             'program_keahlian_1' => ['required', 'string', 'max:100', 'different:program_keahlian_2', Rule::in($this->programOptions())],
             'program_keahlian_2' => ['required', 'string', 'max:100', 'not_in:Teknik Komputer dan Jaringan (TKJ)', Rule::in($this->programSecondOptions())],
-            'surat_keterangan_lulus' => [$requiredFileRule, 'file', 'mimes:pdf', 'max:1024'],
-            'kartu_keluarga' => [$requiredFileRule, 'file', 'mimes:pdf', 'max:1024'],
+            'surat_keterangan_lulus' => [$requiredFileRule, 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:1024'],
+            'kartu_keluarga' => [$requiredFileRule, 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:1024'],
             'foto_selfie' => [$requiredFileRule, 'image', 'mimes:jpg,jpeg,png', 'max:1024'],
         ]), [
             'nik.digits' => 'NIK harus terdiri dari tepat 16 digit angka.',
@@ -342,9 +342,9 @@ class FormulirController extends Controller
         return $data;
     }
 
-    private function syncAkunEmail(string $nisn, string $email): void
+    private function syncAkunEmail(string $nisn, ?string $email): void
     {
-        Pengguna::whereKey($nisn)->update(['email' => $email]);
+        Pengguna::whereKey($nisn)->update(['email' => $email ?: null]);
     }
 
     private function storeUploads(Request $request): array

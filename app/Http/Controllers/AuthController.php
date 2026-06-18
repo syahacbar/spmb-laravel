@@ -19,7 +19,10 @@ class AuthController extends Controller
     {
         $this->generateLoginCaptcha($request);
 
-        return view('auth.login');
+        return view('auth.login', [
+            'panitiaWhatsapp' => $this->panitiaWhatsapp(),
+            'panitiaWhatsappUrl' => $this->panitiaWhatsappUrl(),
+        ]);
     }
 
     public function authenticate(Request $request): RedirectResponse

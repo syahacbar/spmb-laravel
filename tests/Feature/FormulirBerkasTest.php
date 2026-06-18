@@ -51,6 +51,38 @@ class FormulirBerkasTest extends TestCase
         $this->assertStringContainsString('inline', (string) $response->headers->get('Content-Disposition'));
     }
 
+    public function test_pemilik_dapat_mengunduh_dokumen_private(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('dokumen/kk.pdf', 'isi dokumen');
+
+        $formulir = new Formulir([
+            'nisn' => '1234567890',
+            'kartu_keluarga' => 'dokumen/kk.pdf',
+        ]);
+        $request = Request::create('/?download=1');
+        $request->attributes->set('pengguna', new Pengguna([
+            'id_pengguna' => '1234567890',
+            'level' => 'User',
+        ]));
+
+        $response = app(FormulirBerkasController::class)
+            ->show($request, $formulir, 'kartu_keluarga');
+
+        $this->assertStringContainsString('attachment', (string) $response->headers->get('Content-Disposition'));
+    }
+
+    public function test_model_mendeteksi_dokumen_gambar(): void
+    {
+        $formulir = new Formulir([
+            'surat_keterangan_lulus' => 'dokumen/ijazah.JPG',
+            'kartu_keluarga' => 'dokumen/kk.pdf',
+        ]);
+
+        $this->assertTrue($formulir->berkasIsImage('surat_keterangan_lulus'));
+        $this->assertFalse($formulir->berkasIsImage('kartu_keluarga'));
+    }
+
     public function test_pembersihan_dokumen_hanya_menghapus_file_dokumen_private(): void
     {
         Storage::fake('local');

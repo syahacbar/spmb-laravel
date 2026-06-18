@@ -29,8 +29,11 @@
                         </div>
                     </div>
 
-                    <p class="auth-note mt-4 mb-2">Belum memiliki akun? Klik <a href="{{ route('register') }}">Daftar Akun</a>.</p>
-                    <p class="auth-note mb-0">Mengalami kendala login? Hubungi panitia melalui <strong>WhatsApp</strong> untuk verifikasi akun.</p>
+                    <p class="auth-note mb-0">
+                        Mengalami kendala login? Hubungi panitia melalui
+                        <a href="{{ $panitiaWhatsappUrl }}" target="_blank" rel="noopener"><strong>WhatsApp {{ $panitiaWhatsapp }}</strong></a>
+                        untuk verifikasi akun.
+                    </p>
                 </div>
 
                 <div class="col-md-8 col-lg-5 col-xl-4">
@@ -39,7 +42,8 @@
                             <div class="mb-4">
                                 <div class="text-muted small text-uppercase fw-bold">Login SPMB</div>
                                 <h4 class="fw-bold mb-1">Selamat datang</h4>
-                                <div class="text-muted small">Gunakan NISN dan password yang sudah terdaftar.</div>
+                                <div class="text-muted small mb-3">Apakah anda belum punya akun SPMB? Klik daftar.</div>
+                                <a href="{{ route('register') }}" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">Daftar Akun SPMB</a>
                             </div>
 
                             @if(session('success'))
@@ -60,6 +64,8 @@
                                     </ul>
                                 </div>
                             @endif
+
+                            <div class="small text-muted mb-3">Jika anda sudah punya akun, masukkan NISN dan kata sandi.</div>
 
                             <form method="post" action="{{ route('login.store') }}">
                                 @csrf
@@ -88,12 +94,11 @@
                                     <input type="number" name="captcha_answer" class="form-control form-control-lg" inputmode="numeric" placeholder="Masukkan hasil" required>
                                 </div>
 
-                                <button class="btn btn-primary btn-lg w-100">Masuk</button>
+                                <button class="btn btn-outline-primary btn-lg w-100">Masuk</button>
                             </form>
 
-                            <div class="d-flex justify-content-between align-items-center mt-4">
-                                <a href="{{ route('register') }}" class="fw-bold text-decoration-none">Daftar akun</a>
-                                <a href="{{ route('landing') }}" class="fw-bold text-decoration-none">Kembali ke Beranda</a>
+                            <div class="text-center mt-4">
+                                <a href="{{ route('landing') }}" class="small text-muted text-decoration-none">&larr; Kembali ke halaman beranda</a>
                             </div>
                         </div>
                     </div>

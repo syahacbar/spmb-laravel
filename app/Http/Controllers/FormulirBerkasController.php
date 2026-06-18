@@ -25,10 +25,11 @@ class FormulirBerkasController extends Controller
         $path = $formulir->{$field};
 
         abort_unless($path, 404);
+        $disposition = $request->boolean('download') ? 'attachment' : 'inline';
 
         if (str_starts_with($path, 'dokumen/') && Storage::disk('local')->exists($path)) {
             return Storage::disk('local')->response($path, basename($path), [
-                'Content-Disposition' => 'inline; filename="'.basename($path).'"',
+                'Content-Disposition' => $disposition.'; filename="'.basename($path).'"',
             ]);
         }
 
@@ -37,7 +38,7 @@ class FormulirBerkasController extends Controller
         abort_unless($legacyPath, 404);
 
         return response()->file($legacyPath, [
-            'Content-Disposition' => 'inline; filename="'.basename($legacyPath).'"',
+            'Content-Disposition' => $disposition.'; filename="'.basename($legacyPath).'"',
         ]);
     }
 

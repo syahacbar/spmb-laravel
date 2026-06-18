@@ -88,7 +88,7 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Kata Sandi</label>
+                                        <label class="form-label">Buat Kata Sandi</label>
                                         <div class="input-group input-group-lg password-toggle-group">
                                             <input type="password" name="password" id="register-password" class="form-control" autocomplete="new-password" @if($showAccountFields) required @endif>
                                             <button class="btn btn-outline-secondary password-toggle" type="button" data-password-toggle="register-password" aria-label="Lihat kata sandi" aria-pressed="false">

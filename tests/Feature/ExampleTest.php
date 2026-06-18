@@ -47,6 +47,22 @@ class ExampleTest extends TestCase
             ->assertDontSee('Email Aktif');
     }
 
+    public function test_login_menampilkan_tombol_daftar_dominan_dan_link_beranda(): void
+    {
+        $response = $this->get('/login');
+
+        $response
+            ->assertOk()
+            ->assertSee('Apakah anda belum punya akun SPMB? Klik daftar.')
+            ->assertSee('Daftar Akun SPMB')
+            ->assertSee('Jika anda sudah punya akun, masukkan NISN dan kata sandi.')
+            ->assertSee('Kembali ke halaman beranda')
+            ->assertSee('WhatsApp')
+            ->assertSee('https://wa.me/', false)
+            ->assertSee('btn btn-primary btn-lg w-100 fw-bold shadow-sm', false)
+            ->assertSee('small text-muted text-decoration-none', false);
+    }
+
     public function test_register_nisn_check_validates_nisn_before_lookup(): void
     {
         $response = $this->postJson('/daftar/cek-nisn', [

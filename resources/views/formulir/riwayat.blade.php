@@ -120,7 +120,7 @@
                                     'foto_selfie' => 'Pas Foto',
                                 ] as $field => $label)
                                     @if($formulir->berkasTersedia($field))
-                                        <a href="{{ $formulir->berkasUrl($field) }}" target="_blank">{{ $label }}</a>
+                                        <a href="{{ $formulir->berkasUrl($field) }}" data-document-preview data-document-title="{{ $label }}" data-document-type="{{ $formulir->berkasIsImage($field) ? 'image' : 'pdf' }}" data-document-download="{{ $formulir->berkasDownloadUrl($field) }}">{{ $label }}</a>
                                     @else
                                         <span class="text-muted small">{{ $label }} belum tersedia</span>
                                     @endif

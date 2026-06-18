@@ -76,6 +76,25 @@ class Formulir extends Model
         return route('formulir.berkas.show', [$this, $field]);
     }
 
+    public function berkasDownloadUrl(string $field): string
+    {
+        return $this->berkasUrl($field).'?download=1';
+    }
+
+    public function berkasIsImage(string $field): bool
+    {
+        if (! in_array($field, self::DOCUMENT_FIELDS, true)) {
+            return false;
+        }
+
+        return in_array(strtolower(pathinfo((string) $this->{$field}, PATHINFO_EXTENSION)), [
+            'jpg',
+            'jpeg',
+            'png',
+            'webp',
+        ], true);
+    }
+
     public function berkasTersedia(string $field): bool
     {
         if (! in_array($field, self::DOCUMENT_FIELDS, true)) {
