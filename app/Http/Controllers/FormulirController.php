@@ -16,6 +16,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use RuntimeException;
+use Throwable;
 
 class FormulirController extends Controller
 {
@@ -203,7 +204,21 @@ class FormulirController extends Controller
         unset($data['email']);
 
         $data = array_merge($data, $this->calonSiswaFormulirData($formulir->nisn));
-        $formulir->update(array_merge($data, $this->storeUploads($request)));
+        $uploadedPaths = $this->storeUploads($request);
+        $replacedPaths = collect(array_keys($uploadedPaths))
+            ->mapWithKeys(fn (string $field): array => [$field => $formulir->{$field}])
+            ->filter()
+            ->all();
+
+        try {
+            $formulir->update(array_merge($data, $uploadedPaths));
+        } catch (Throwable $exception) {
+            $this->deleteDocumentFiles($uploadedPaths);
+
+            throw $exception;
+        }
+
+        $this->deleteDocumentFiles($replacedPaths, true);
 
         if ($pengguna->level === 'Administrator') {
             return redirect()->route('admin.pendaftar')->with('success', 'Formulir berhasil diperbarui.');
@@ -278,7 +293,11 @@ class FormulirController extends Controller
 
         $data = $request->validate(array_merge($identityRules, [
             'email' => ['required', 'email', 'max:100', Rule::unique('tb_pengguna', 'email')->ignore($nisn, 'id_pengguna')],
-            'nik' => ['required', 'string', 'max:30'],
+            'nik' => [
+                'required',
+                'digits:16',
+                Rule::unique('tb_formulir', 'nik')->ignore($nisn, 'nisn'),
+            ],
             'jenis_kelamin' => ['required', 'in:Laki-laki,Perempuan'],
             'agama' => ['required', 'string', 'max:50'],
             'alamat' => ['required', 'string'],
@@ -302,6 +321,8 @@ class FormulirController extends Controller
             'kartu_keluarga' => [$requiredFileRule, 'file', 'mimes:pdf', 'max:1024'],
             'foto_selfie' => [$requiredFileRule, 'image', 'mimes:jpg,jpeg,png', 'max:1024'],
         ]), [
+            'nik.digits' => 'NIK harus terdiri dari tepat 16 digit angka.',
+            'nik.unique' => 'NIK tersebut sudah digunakan oleh pendaftar lain.',
             'program_keahlian_1.required' => 'Pilih program keahlian wajib diisi.',
             'program_keahlian_2.required' => 'Pilih program keahlian wajib diisi.',
             'program_keahlian_2.not_in' => 'Program keahlian B belum dapat memilih Teknik Komputer dan Jaringan (TKJ). Silakan pilih program keahlian lain.',
@@ -330,20 +351,26 @@ class FormulirController extends Controller
     {
         $paths = [];
 
-        foreach (Formulir::DOCUMENT_FIELDS as $field) {
-            if (! $request->hasFile($field)) {
-                continue;
+        try {
+            foreach (Formulir::DOCUMENT_FIELDS as $field) {
+                if (! $request->hasFile($field)) {
+                    continue;
+                }
+
+                $file = $request->file($field);
+                $name = Str::uuid().'_'.$field.'.'.$file->extension();
+                $path = $file->storeAs('dokumen', $name, 'local');
+
+                if (! $path) {
+                    throw new RuntimeException("Berkas {$field} gagal disimpan.");
+                }
+
+                $paths[$field] = $path;
             }
+        } catch (Throwable $exception) {
+            $this->deleteDocumentFiles($paths);
 
-            $file = $request->file($field);
-            $name = Str::uuid().'_'.$field.'.'.$file->extension();
-            $path = $file->storeAs('dokumen', $name, 'local');
-
-            if (! $path) {
-                throw new RuntimeException("Berkas {$field} gagal disimpan.");
-            }
-
-            $paths[$field] = $path;
+            throw $exception;
         }
 
         return $paths;
@@ -351,8 +378,54 @@ class FormulirController extends Controller
 
     private function deleteUploadedFiles(array $paths): void
     {
-        if ($paths !== []) {
-            Storage::disk('local')->delete(array_values($paths));
+        $this->deleteDocumentFiles($paths);
+    }
+
+    private function deleteDocumentFiles(array $paths, bool $skipReferencedFiles = false): void
+    {
+        foreach ($paths as $path) {
+            if (! is_string($path) || $path === '') {
+                continue;
+            }
+
+            if ($skipReferencedFiles && $this->documentPathIsReferenced($path)) {
+                continue;
+            }
+
+            if (str_starts_with($path, 'dokumen/')) {
+                Storage::disk('local')->delete($path);
+
+                continue;
+            }
+
+            if (str_starts_with($path, 'uploads/dokumen/')) {
+                $this->deleteLegacyPublicDocument($path);
+            }
+        }
+    }
+
+    private function documentPathIsReferenced(string $path): bool
+    {
+        return Formulir::query()
+            ->where(function ($query) use ($path): void {
+                foreach (Formulir::DOCUMENT_FIELDS as $field) {
+                    $query->orWhere($field, $path);
+                }
+            })
+            ->exists();
+    }
+
+    private function deleteLegacyPublicDocument(string $path): void
+    {
+        $basePath = realpath(public_path('uploads/dokumen'));
+        $filePath = realpath(public_path($path));
+
+        if (! $basePath || ! $filePath || ! str_starts_with($filePath, $basePath.DIRECTORY_SEPARATOR)) {
+            return;
+        }
+
+        if (is_file($filePath)) {
+            unlink($filePath);
         }
     }
 

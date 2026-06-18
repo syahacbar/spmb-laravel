@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Formulir;
+use App\Models\PengaturanSpmb;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -38,6 +39,30 @@ class FormulirBerkasController extends Controller
         return response()->file($legacyPath, [
             'Content-Disposition' => 'inline; filename="'.basename($legacyPath).'"',
         ]);
+    }
+
+    public function signature(Request $request, Formulir $formulir): BinaryFileResponse|StreamedResponse
+    {
+        $pengguna = $request->attributes->get('pengguna');
+
+        abort_unless(
+            $pengguna->level === 'Administrator' || $formulir->nisn === $pengguna->id_pengguna,
+            403,
+        );
+
+        $path = $this->currentSignaturePath();
+
+        abort_unless(str_starts_with($path, 'pengaturan/tanda-tangan/'), 404);
+        abort_unless(Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path, basename($path), [
+            'Content-Disposition' => 'inline; filename="'.basename($path).'"',
+        ]);
+    }
+
+    protected function currentSignaturePath(): string
+    {
+        return (string) PengaturanSpmb::getValue('kepala_ttd_path', '');
     }
 
     private function legacyPublicPath(string $path): ?string

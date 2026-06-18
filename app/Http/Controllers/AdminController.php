@@ -13,8 +13,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 class AdminController extends Controller
@@ -83,21 +87,38 @@ class AdminController extends Controller
         unset($data['kepala_ttd']);
 
         if ($request->hasFile('kepala_ttd')) {
-            $dir = public_path('uploads/pengaturan');
+            $oldPath = (string) PengaturanSpmb::getValue('kepala_ttd_path', '');
+            $file = $request->file('kepala_ttd');
+            $name = Str::uuid().'.'.$file->extension();
+            $newPath = $file->storeAs('pengaturan/tanda-tangan', $name, 'local');
 
-            if (! is_dir($dir)) {
-                mkdir($dir, 0775, true);
+            if (! $newPath) {
+                return back()->with('warning', 'Tanda tangan digital gagal disimpan. Silakan coba kembali.');
             }
 
-            $file = $request->file('kepala_ttd');
-            $name = 'ttd_kepala_'.time().'.'.$file->extension();
-            $file->move($dir, $name);
-            $data['kepala_ttd_path'] = 'uploads/pengaturan/'.$name;
+            $data['kepala_ttd_path'] = $newPath;
+
+            try {
+                PengaturanSpmb::setMany($data);
+            } catch (Throwable $exception) {
+                Storage::disk('local')->delete($newPath);
+
+                throw $exception;
+            }
+
+            $this->deleteOldSignature($oldPath);
+
+            return back()->with('success', 'Identitas dan pengaturan kartu pendaftaran berhasil diperbarui.');
         }
 
         PengaturanSpmb::setMany($data);
 
         return back()->with('success', 'Identitas dan pengaturan kartu pendaftaran berhasil diperbarui.');
+    }
+
+    public function showSignature(): BinaryFileResponse|StreamedResponse
+    {
+        return $this->signatureResponse();
     }
 
     public function updateProgramKeahlian(Request $request): RedirectResponse
@@ -406,6 +427,43 @@ class AdminController extends Controller
     {
         if ($pengguna->level === 'Administrator') {
             abort(403);
+        }
+    }
+
+    private function signatureResponse(): BinaryFileResponse|StreamedResponse
+    {
+        $path = $this->currentSignaturePath();
+
+        abort_unless(str_starts_with($path, 'pengaturan/tanda-tangan/'), 404);
+        abort_unless(Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path, basename($path), [
+            'Content-Disposition' => 'inline; filename="'.basename($path).'"',
+        ]);
+    }
+
+    protected function currentSignaturePath(): string
+    {
+        return (string) PengaturanSpmb::getValue('kepala_ttd_path', '');
+    }
+
+    private function deleteOldSignature(string $path): void
+    {
+        if (str_starts_with($path, 'pengaturan/tanda-tangan/')) {
+            Storage::disk('local')->delete($path);
+
+            return;
+        }
+
+        if (! str_starts_with($path, 'uploads/pengaturan/')) {
+            return;
+        }
+
+        $basePath = realpath(public_path('uploads/pengaturan'));
+        $filePath = realpath(public_path($path));
+
+        if ($basePath && $filePath && str_starts_with($filePath, $basePath.DIRECTORY_SEPARATOR) && is_file($filePath)) {
+            unlink($filePath);
         }
     }
 

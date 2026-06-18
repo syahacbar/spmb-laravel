@@ -368,7 +368,11 @@
             <div class="signature-caption">{{ $kepalaJabatan }}</div>
             <div class="signature-image-wrap">
                 @if($kepalaTtdPath)
-                    <img src="{{ asset($kepalaTtdPath) }}" class="signature-image" alt="Tanda tangan {{ $kepalaNama }}">
+                    <img
+                        src="{{ str_starts_with($kepalaTtdPath, 'pengaturan/tanda-tangan/') ? route('formulir.signature.show', $formulir) : asset($kepalaTtdPath) }}"
+                        class="signature-image"
+                        alt="Tanda tangan {{ $kepalaNama }}"
+                    >
                 @endif
             </div>
             <div class="signature-name">{{ $kepalaNama }}</div>

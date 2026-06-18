@@ -39,6 +39,7 @@ Route::middleware('spmb.auth')->group(function (): void {
     Route::put('/formulir/{formulir}', [FormulirController::class, 'update'])->name('formulir.update');
     Route::get('/formulir/{formulir}/periksa', [FormulirController::class, 'periksa'])->name('formulir.periksa');
     Route::get('/formulir/{formulir}/berkas/{field}', [FormulirBerkasController::class, 'show'])->name('formulir.berkas.show');
+    Route::get('/formulir/{formulir}/tanda-tangan', [FormulirBerkasController::class, 'signature'])->name('formulir.signature.show');
     Route::post('/formulir/{formulir}/kirim', [FormulirController::class, 'kirim'])->name('formulir.kirim');
     Route::get('/formulir/{formulir}/cetak', [FormulirController::class, 'cetak'])->name('formulir.cetak');
 
@@ -47,6 +48,7 @@ Route::middleware('spmb.auth')->group(function (): void {
         Route::get('/pengguna', [AdminController::class, 'pengguna'])->name('pengguna');
         Route::post('/pengguna', [AdminController::class, 'storePengguna'])->name('pengguna.store');
         Route::get('/pengaturan', [AdminController::class, 'pengaturan'])->name('pengaturan');
+        Route::get('/pengaturan/tanda-tangan', [AdminController::class, 'showSignature'])->name('pengaturan.signature.show');
         Route::post('/pengaturan/identitas', [AdminController::class, 'updateIdentitas'])->name('pengaturan.identitas');
         Route::post('/pengaturan/program-keahlian', [AdminController::class, 'updateProgramKeahlian'])->name('pengaturan.program.update');
         Route::post('/pengaturan/program-keahlian/tambah', [AdminController::class, 'storeProgramKeahlian'])->name('pengaturan.program.store');

@@ -109,7 +109,7 @@ class PenggunaSeeder extends Seeder
                 'nama' => 'Citra Lestari',
                 'tempat_lahir' => 'Bintuni',
                 'tanggal_lahir' => '2010-04-12',
-                'nik' => '9206015204100001',
+                'nik' => '9206015204100003',
                 'jenis_kelamin' => 'Perempuan',
                 'agama' => 'Kristen Protestan',
                 'hp' => '6282211110002',

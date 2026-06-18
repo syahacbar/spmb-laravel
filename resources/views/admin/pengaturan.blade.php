@@ -184,7 +184,10 @@
                         <label class="form-label">Preview TTD Saat Ini</label>
                         <div class="signature-preview">
                             @if($settings['kepala_ttd_path'])
-                                <img src="{{ asset($settings['kepala_ttd_path']) }}" alt="Tanda tangan digital">
+                                <img
+                                    src="{{ str_starts_with($settings['kepala_ttd_path'], 'pengaturan/tanda-tangan/') ? route('admin.pengaturan.signature.show') : asset($settings['kepala_ttd_path']) }}"
+                                    alt="Tanda tangan digital"
+                                >
                             @else
                                 <span class="text-muted small">Belum ada TTD</span>
                             @endif

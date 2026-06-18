@@ -50,4 +50,21 @@ class FormulirBerkasTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
         $this->assertStringContainsString('inline', (string) $response->headers->get('Content-Disposition'));
     }
+
+    public function test_pembersihan_dokumen_hanya_menghapus_file_dokumen_private(): void
+    {
+        Storage::fake('local');
+        Storage::disk('local')->put('dokumen/lama.pdf', 'lama');
+        Storage::disk('local')->put('file-lain.pdf', 'tetap ada');
+
+        $method = new \ReflectionMethod(FormulirController::class, 'deleteDocumentFiles');
+        $method->invoke(app(FormulirController::class), [
+            'kartu_keluarga' => 'dokumen/lama.pdf',
+            'aset_bawaan' => 'images/kop.jpg',
+            'file_lain' => 'file-lain.pdf',
+        ]);
+
+        Storage::disk('local')->assertMissing('dokumen/lama.pdf');
+        Storage::disk('local')->assertExists('file-lain.pdf');
+    }
 }
