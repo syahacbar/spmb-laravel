@@ -16,7 +16,7 @@ class Pengguna extends Model
 
     protected $keyType = 'string';
 
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $fillable = [
         'id_pengguna',
@@ -30,12 +30,16 @@ class Pengguna extends Model
         'is_verified',
         'is_active',
         'verified_at',
+        'created_at',
+        'updated_at',
     ];
 
     protected $casts = [
         'is_verified' => 'boolean',
         'is_active' => 'boolean',
         'verified_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function calonSiswa(): BelongsTo

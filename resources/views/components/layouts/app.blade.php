@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? 'SPMB SMKN 1 Bintuni' }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    @if(request()->routeIs('admin.pengguna', 'admin.pendaftar', 'admin.pengaturan'))
+    @if(request()->routeIs('admin.pengguna', 'admin.pendaftar', 'admin.laporan', 'admin.pengaturan'))
         <link href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.css" rel="stylesheet">
     @endif
     <style>
@@ -118,6 +118,7 @@
         .sidebar-link { color: #cbd5e1; display: flex; align-items: center; gap: .65rem; padding: .72rem .85rem; text-decoration: none; border-radius: .5rem; font-weight: 600; }
         .sidebar-link:hover, .sidebar-link.active { background: #243044; color: #fff; }
         .sidebar-link.active { box-shadow: inset 3px 0 0 #ef4444; }
+        .sidebar-separator { margin: .8rem .5rem; border-color: rgba(255, 255, 255, .18); opacity: 1; }
         .document-preview-frame {
             width: 100%;
             height: min(72vh, 760px);
@@ -1098,6 +1099,8 @@
                     <a class="sidebar-link {{ request()->routeIs('admin.pendaftar') ? 'active' : '' }}" href="{{ route('admin.pendaftar') }}">Data Registrasi</a>
                     <a class="sidebar-link {{ request()->routeIs('admin.pengguna') ? 'active' : '' }}" href="{{ route('admin.pengguna') }}">Data User</a>
                     <a class="sidebar-link {{ request()->routeIs('admin.pengaturan') ? 'active' : '' }}" href="{{ route('admin.pengaturan') }}">Pengaturan SPMB</a>
+                    <hr class="sidebar-separator">
+                    <a class="sidebar-link {{ request()->routeIs('admin.laporan*') ? 'active' : '' }}" href="{{ route('admin.laporan') }}">Laporan</a>
                 @else
                     <a class="sidebar-link {{ request()->routeIs('formulir.create', 'formulir.edit', 'formulir.periksa') ? 'active' : '' }}" href="{{ route('formulir.create') }}">Formulir Registrasi</a>
                     <a class="sidebar-link {{ request()->routeIs('formulir.riwayat') ? 'active' : '' }}" href="{{ route('formulir.riwayat') }}">Riwayat Registrasi</a>
@@ -1160,7 +1163,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-@if(request()->routeIs('admin.pengguna', 'admin.pendaftar', 'admin.pengaturan'))
+@if(request()->routeIs('admin.pengguna', 'admin.pendaftar', 'admin.laporan', 'admin.pengaturan'))
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
     <script src="https://cdn.datatables.net/2.0.8/js/dataTables.bootstrap5.js"></script>

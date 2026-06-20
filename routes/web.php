@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FormulirBerkasController;
 use App\Http\Controllers\FormulirController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PenggunaWhatsappController;
 use Illuminate\Support\Facades\Route;
 
@@ -46,6 +47,9 @@ Route::middleware('spmb.auth')->group(function (): void {
 
     Route::middleware('spmb.admin')->prefix('admin')->name('admin.')->group(function (): void {
         Route::get('/pendaftar', [AdminController::class, 'pendaftar'])->name('pendaftar');
+        Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');
+        Route::get('/laporan/export', [LaporanController::class, 'export'])->name('laporan.export');
+        Route::get('/laporan/berkas', [LaporanController::class, 'downloadBerkas'])->name('laporan.berkas');
         Route::get('/pengguna', [AdminController::class, 'pengguna'])->name('pengguna');
         Route::post('/pengguna', [AdminController::class, 'storePengguna'])->name('pengguna.store');
         Route::get('/pengaturan', [AdminController::class, 'pengaturan'])->name('pengaturan');

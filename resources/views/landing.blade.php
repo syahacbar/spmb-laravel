@@ -1116,7 +1116,7 @@
                             <b>Pas Foto Seragam</b>
                         </div>
                     </div>
-                    <span class="requirements-badge">4 Berkas Utama</span>
+                    <span class="requirements-badge">3 Berkas Utama</span>
                 </div>
                 <div class="requirements-list">
                     <div class="requirement-card">

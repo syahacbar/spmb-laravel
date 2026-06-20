@@ -78,6 +78,7 @@
                         <th>Asal Sekolah</th>
                         <th>No Telpon</th>
                         <th>Status</th>
+                        <th>Tanggal Buat Akun</th>
                         <th>Aksi</th>
                     </tr>
                     <tr class="filter-row">
@@ -98,6 +99,7 @@
                                 <option value="Nonaktif">Nonaktif</option>
                             </select>
                         </th>
+                        <th></th>
                         <th></th>
                     </tr>
                     </thead>
@@ -135,18 +137,23 @@
                                     <span class="badge text-bg-secondary">Nonaktif</span>
                                 @elseif($user->is_verified)
                                     <span class="badge text-bg-success">Aktif</span>
-                                    @if($user->verified_at)
-                                        <div class="small text-muted">{{ $user->verified_at->format('d/m/Y H:i') }}</div>
-                                    @endif
                                 @else
                                     <span class="badge text-bg-warning">Menunggu</span>
                                 @endif
                             </td>
+                            <td data-order="{{ $user->created_at?->timestamp ?? 0 }}">
+                                @if($user->created_at)
+                                    <div class="text-nowrap">{{ $user->created_at->format('d/m/Y') }}</div>
+                                    <div class="small text-muted">{{ $user->created_at->format('H:i') }}</div>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
                             <td>
                                 <div class="d-flex flex-wrap gap-1">
-                                    <form method="post" action="{{ route('admin.pengguna.verifikasi', $user) }}" class="mb-0">
+                                    <form method="post" action="{{ route('admin.pengguna.verifikasi', $user) }}" class="mb-0 verify-form" data-phone="{{ $phone }}">
                                         @csrf
-                                        <button class="btn btn-sm {{ $user->is_verified ? 'btn-outline-success' : 'btn-success' }}" data-confirm="Verifikasi akun ini?" aria-label="Verifikasi user {{ $user->id_pengguna }}" title="{{ $user->is_verified ? 'Sudah terverifikasi' : 'Verifikasi akun' }}" @disabled($user->is_verified)>
+                                        <button type="submit" data-confirm="Verifikasi akun ini?" class="btn btn-sm {{ $user->is_verified ? 'btn-outline-success' : 'btn-success' }}" aria-label="Verifikasi user {{ $user->id_pengguna }}" title="{{ $user->is_verified ? 'Sudah terverifikasi' : 'Verifikasi akun' }}" @disabled($user->is_verified)>
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                                                 <path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path>
                                             </svg>
@@ -154,15 +161,7 @@
                                         </button>
                                     </form>
 
-                                    @if($user->is_verified && $user->is_active && $phone)
-                                        <a href="{{ route('admin.pengguna.notifikasi-whatsapp', $user) }}" target="_blank" rel="noopener" class="btn btn-sm btn-success" aria-label="Kirim pemberitahuan WhatsApp kepada user {{ $user->id_pengguna }}" title="Kirim pemberitahuan akun aktif via WhatsApp">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                                <path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.5L3 20.5l1.4-4.7A8.5 8.5 0 1 1 20.5 11.6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"></path>
-                                                <path d="M8.2 7.7c.2-.4.4-.4.7-.4h.5c.2 0 .4.1.5.4l.8 1.9c.1.2.1.4 0 .6l-.7 1c-.2.2-.1.4 0 .6.8 1.4 1.9 2.4 3.3 3.1.2.1.4.1.6-.1l.9-1.1c.2-.2.4-.3.7-.2l1.9.9c.3.1.4.3.4.5 0 .5-.2 1.5-.8 2-.6.5-1.4.8-2.4.6-1.3-.2-3-.9-4.8-2.5-1.5-1.3-2.5-2.9-2.9-4.2-.4-1.1-.1-2.3.4-2.8l.9-.3Z" fill="currentColor"></path>
-                                            </svg>
-                                            <span class="visually-hidden">Kirim WhatsApp</span>
-                                        </a>
-                                    @endif
+                                    {{-- WhatsApp button removed from server-rendered actions; will be added client-side after verification --}}
 
                                     <form method="post" action="{{ route('admin.pengguna.toggle-active', $user) }}" class="mb-0">
                                         @csrf
@@ -229,10 +228,10 @@
                 orderCellsTop: true,
                 pageLength: 10,
                 lengthMenu: [10, 25, 50, 100],
-                order: [[1, 'asc']],
+                order: [[6, 'desc']],
                 columnDefs: [
-                    { orderable: false, searchable: false, targets: [0, 6] },
-                    { type: 'num', targets: 5 },
+                    { orderable: false, searchable: false, targets: [0, 7] },
+                    { type: 'num', targets: [5, 6] },
                 ],
                 language: {
                     search: 'Cari:',
@@ -287,6 +286,117 @@
                 });
             });
 
+            // Show verification result modal with WhatsApp button
+            function showVerificationModal(waPhone) {
+                let modalEl = document.getElementById('verificationResultModal');
+                if (! modalEl) return;
+
+                const modalTitle = modalEl.querySelector('.verification-modal-title');
+                const modalBody = modalEl.querySelector('.verification-modal-body');
+                const modalActions = modalEl.querySelector('.verification-modal-actions');
+
+                modalTitle.textContent = 'Akun diverifikasi';
+                modalBody.textContent = 'Akun berhasil diverifikasi.';
+
+                // clear actions and add WA button if phone provided
+                modalActions.replaceChildren();
+                const closeBtn = document.createElement('button');
+                closeBtn.type = 'button';
+                closeBtn.className = 'btn btn-outline-secondary';
+                closeBtn.setAttribute('data-bs-dismiss', 'modal');
+                closeBtn.textContent = 'Tutup';
+                modalActions.appendChild(closeBtn);
+
+                if (waPhone) {
+                    const waBtn = document.createElement('a');
+                    waBtn.className = 'btn btn-success';
+                    waBtn.href = 'https://wa.me/' + waPhone;
+                    waBtn.target = '_blank';
+                    waBtn.rel = 'noopener';
+                    waBtn.innerHTML = 'Kirim WhatsApp';
+                    modalActions.insertBefore(waBtn, closeBtn);
+                }
+
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+
+            function showFlashError(message) {
+                // remove existing flash alerts
+                document.querySelectorAll('.flash-alert').forEach(a => a.remove());
+                const container = document.querySelector('.page-title');
+                if (! container) return;
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flash-alert flash-alert-danger alert-dismissible fade show';
+                wrapper.setAttribute('role', 'alert');
+                const icon = document.createElement('span');
+                icon.className = 'flash-alert-icon';
+                icon.setAttribute('aria-hidden', 'true');
+                icon.textContent = '!';
+                const content = document.createElement('div');
+                content.className = 'flex-grow-1';
+                const t = document.createElement('div');
+                t.className = 'flash-alert-title';
+                t.textContent = 'Terjadi kesalahan';
+                const m = document.createElement('div');
+                m.className = 'flash-alert-message';
+                m.textContent = message;
+                content.appendChild(t);
+                content.appendChild(m);
+                const closeBtn = document.createElement('button');
+                closeBtn.type = 'button';
+                closeBtn.className = 'btn-close';
+                closeBtn.setAttribute('data-bs-dismiss', 'alert');
+                closeBtn.setAttribute('aria-label', 'Tutup');
+                wrapper.appendChild(icon);
+                wrapper.appendChild(content);
+                wrapper.appendChild(closeBtn);
+                container.parentNode.insertBefore(wrapper, container.nextSibling);
+            }
+
+            document.querySelectorAll('.verify-form').forEach(function (form) {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const btn = form.querySelector('button[type="submit"]');
+                    if (btn) {
+                        btn.disabled = true;
+                    }
+
+                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+                    fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': token,
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                        },
+                        body: new FormData(form),
+                    }).then(function (res) {
+                        if (! res.ok) {
+                            throw new Error('Request failed');
+                        }
+                        return res.text();
+                    }).then(function () {
+                        // update button style to indicate verified
+                        if (btn) {
+                            btn.classList.remove('btn-success');
+                            btn.classList.add('btn-outline-success');
+                            btn.setAttribute('disabled', 'disabled');
+                        }
+
+                        // show verification modal (popup) with WhatsApp button
+                        const phone = form.dataset.phone;
+                        showVerificationModal(phone);
+                    }).catch(function (err) {
+                        console.error(err);
+                        showFlashError('Gagal memverifikasi akun. Coba lagi.');
+                        if (btn) btn.disabled = false;
+                    });
+                });
+            });
+
             table.on('order.dt search.dt draw.dt', function () {
                 let index = 1;
 
@@ -298,4 +408,20 @@
             }).draw();
         });
     </script>
+
+    <!-- Verification result modal -->
+    <div class="modal fade" id="verificationResultModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title verification-modal-title">Hasil</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body verification-modal-body">Konten</div>
+                <div class="modal-footer verification-modal-actions">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </x-layouts.app>
