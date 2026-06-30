@@ -31,9 +31,12 @@ class PenggunaWhatsappTest extends TestCase
         $siswa->setRelation('calonSiswa', $calonSiswa);
 
         $message = implode("\n", [
-            'Halo Budi Santoso',
-            'Akun SPMB anda dengan NISN 1234567890 telah aktif.',
-            'Silahkan lanjutkan proses pengisian biodata dan melengkapi berkas melalui alamat spmb.smkn1bintuni.sch.id/login',
+            'Halo, Budi Santoso',
+            '',
+            'Akun SPMB Anda dengan NISN 1234567890 telah aktif.',
+            'Silahkan login di spmb.smkn1bintuni.sch.id/login untuk mengisi biodata dan melengkapi berkas persyaratan.',
+            '',
+            'Panitia SPMB SMK Negeri 1 Bintuni',
         ]);
 
         $response = app(PenggunaWhatsappController::class)($siswa);
@@ -41,6 +44,28 @@ class PenggunaWhatsappTest extends TestCase
         $this->assertSame(
             'https://wa.me/6281234567890?text='.rawurlencode($message),
             $response->getTargetUrl(),
+        );
+    }
+
+    public function test_link_whatsapp_pengguna_memakai_template_verifikasi(): void
+    {
+        $calonSiswa = new CalonSiswa([
+            'nisn' => '1234567890',
+            'nama' => 'Budi Santoso',
+        ]);
+
+        $siswa = $this->buatPengguna([
+            'id_pengguna' => '1234567890',
+            'nama_pengguna' => '',
+            'telpon' => '081234567890',
+        ]);
+        $siswa->setRelation('calonSiswa', $calonSiswa);
+
+        $this->assertSame('6281234567890', $siswa->whatsappPhone());
+        $this->assertStringStartsWith('https://wa.me/6281234567890?text=', $siswa->verificationWhatsappUrl());
+        $this->assertStringContainsString(
+            rawurlencode('Akun SPMB Anda dengan NISN 1234567890 telah aktif.'),
+            $siswa->verificationWhatsappUrl(),
         );
     }
 

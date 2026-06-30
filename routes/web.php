@@ -55,6 +55,7 @@ Route::middleware('spmb.auth')->group(function (): void {
         Route::get('/pengaturan', [AdminController::class, 'pengaturan'])->name('pengaturan');
         Route::get('/pengaturan/tanda-tangan', [AdminController::class, 'showSignature'])->name('pengaturan.signature.show');
         Route::post('/pengaturan/identitas', [AdminController::class, 'updateIdentitas'])->name('pengaturan.identitas');
+        Route::post('/pengaturan/layanan-pendaftaran', [AdminController::class, 'updateLayananPendaftaran'])->name('pengaturan.layanan-pendaftaran');
         Route::post('/pengaturan/program-keahlian', [AdminController::class, 'updateProgramKeahlian'])->name('pengaturan.program.update');
         Route::post('/pengaturan/program-keahlian/tambah', [AdminController::class, 'storeProgramKeahlian'])->name('pengaturan.program.store');
         Route::delete('/pengaturan/program-keahlian/{program}', [AdminController::class, 'destroyProgramKeahlian'])->name('pengaturan.program.destroy');

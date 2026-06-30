@@ -975,7 +975,7 @@
                 <a href="#persyaratan">Persyaratan</a>
                 <a href="#kuota">Kuota</a>
                 <a href="#cek-status">Cek Status SPMB</a>
-                <a class="login" href="#">Login</a>
+                <a class="login" href="{{ route('login') }}">Login</a>
             </div>
         </nav>
 
@@ -983,7 +983,7 @@
             <h1>SISTEM<br>PENERIMAAN<br><span class="yellow">MURID BARU</span></h1>
             <h3>TAHUN AJARAN 2026/2027</h3>
             <div class="hero-actions">
-                <a class="hero-cta" href="#">Daftar Akun SPMB</a>
+                <a class="hero-cta" href="{{ route('register') }}">Daftar Akun SPMB</a>
                 <a class="hero-link" href="#cek-status">Cek Status</a>
             </div>
         </div>

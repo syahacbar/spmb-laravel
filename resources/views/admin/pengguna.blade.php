@@ -123,9 +123,9 @@
                             <td>{{ $user->calonSiswa->nama ?? ($user->nama_pengguna ?: '-') }}</td>
                             <td>{{ $user->calonSiswa->asal_sekolah ?? '-' }}</td>
                             <td>
-                                @php($phone = preg_replace('/\D+/', '', $user->telpon ?? ''))
+                                @php($phone = $user->whatsappPhone())
                                 @if($phone)
-                                    <a href="https://wa.me/{{ $phone }}" target="_blank" rel="noopener" class="fw-semibold text-decoration-none" aria-label="Hubungi WhatsApp {{ $user->id_pengguna }}" title="Hubungi via WhatsApp">
+                                    <a href="{{ $user->verificationWhatsappUrl() }}" target="_blank" rel="noopener" class="fw-semibold text-decoration-none" aria-label="Hubungi WhatsApp {{ $user->id_pengguna }}" title="Hubungi via WhatsApp">
                                         {{ $user->telpon }}
                                     </a>
                                 @else
@@ -151,7 +151,7 @@
                             </td>
                             <td>
                                 <div class="d-flex flex-wrap gap-1">
-                                    <form method="post" action="{{ route('admin.pengguna.verifikasi', $user) }}" class="mb-0 verify-form" data-phone="{{ $phone }}">
+                                    <form method="post" action="{{ route('admin.pengguna.verifikasi', $user) }}" class="mb-0 verify-form" data-notification-url="{{ route('admin.pengguna.notifikasi-whatsapp', $user) }}">
                                         @csrf
                                         <button type="submit" data-confirm="Verifikasi akun ini?" class="btn btn-sm {{ $user->is_verified ? 'btn-outline-success' : 'btn-success' }}" aria-label="Verifikasi user {{ $user->id_pengguna }}" title="{{ $user->is_verified ? 'Sudah terverifikasi' : 'Verifikasi akun' }}" @disabled($user->is_verified)>
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -287,7 +287,7 @@
             });
 
             // Show verification result modal with WhatsApp button
-            function showVerificationModal(waPhone) {
+            function showVerificationModal(notificationUrl) {
                 let modalEl = document.getElementById('verificationResultModal');
                 if (! modalEl) return;
 
@@ -298,7 +298,7 @@
                 modalTitle.textContent = 'Akun diverifikasi';
                 modalBody.textContent = 'Akun berhasil diverifikasi.';
 
-                // clear actions and add WA button if phone provided
+                // clear actions and add WA button if notification URL is available
                 modalActions.replaceChildren();
                 const closeBtn = document.createElement('button');
                 closeBtn.type = 'button';
@@ -307,10 +307,10 @@
                 closeBtn.textContent = 'Tutup';
                 modalActions.appendChild(closeBtn);
 
-                if (waPhone) {
+                if (notificationUrl) {
                     const waBtn = document.createElement('a');
                     waBtn.className = 'btn btn-success';
-                    waBtn.href = 'https://wa.me/' + waPhone;
+                    waBtn.href = notificationUrl;
                     waBtn.target = '_blank';
                     waBtn.rel = 'noopener';
                     waBtn.innerHTML = 'Kirim WhatsApp';
@@ -387,8 +387,8 @@
                         }
 
                         // show verification modal (popup) with WhatsApp button
-                        const phone = form.dataset.phone;
-                        showVerificationModal(phone);
+                        const notificationUrl = form.dataset.notificationUrl;
+                        showVerificationModal(notificationUrl);
                     }).catch(function (err) {
                         console.error(err);
                         showFlashError('Gagal memverifikasi akun. Coba lagi.');

@@ -22,6 +22,8 @@ class AuthController extends Controller
         return view('auth.login', [
             'panitiaWhatsapp' => $this->panitiaWhatsapp(),
             'panitiaWhatsappUrl' => $this->panitiaWhatsappUrl(),
+            'registrationServiceOpen' => PengaturanSpmb::registrationServiceIsOpen(),
+            'registrationServiceMessage' => PengaturanSpmb::registrationServiceMessage(),
         ]);
     }
 
@@ -63,6 +65,14 @@ class AuthController extends Controller
             return back()->withErrors(['nisn' => 'NISN atau password salah.'])->onlyInput('nisn');
         }
 
+        if ($pengguna->level !== 'Administrator' && ! PengaturanSpmb::registrationServiceIsOpen()) {
+            $this->generateLoginCaptcha($request);
+
+            return back()
+                ->withErrors(['nisn' => PengaturanSpmb::registrationServiceMessage()])
+                ->onlyInput('nisn');
+        }
+
         if ($pengguna->level !== 'Administrator' && $pengguna->is_active === false) {
             $this->generateLoginCaptcha($request);
 
@@ -97,11 +107,21 @@ class AuthController extends Controller
         return view('auth.register', [
             'panitiaWhatsapp' => $this->panitiaWhatsapp(),
             'panitiaWhatsappUrl' => $this->panitiaWhatsappUrl(),
+            'registrationServiceOpen' => PengaturanSpmb::registrationServiceIsOpen(),
+            'registrationServiceMessage' => PengaturanSpmb::registrationServiceMessage(),
         ]);
     }
 
     public function checkRegisterNisn(Request $request): JsonResponse
     {
+        if (! PengaturanSpmb::registrationServiceIsOpen()) {
+            return response()->json([
+                'ok' => false,
+                'type' => 'warning',
+                'message' => PengaturanSpmb::registrationServiceMessage(),
+            ], 403);
+        }
+
         $validator = Validator::make($request->all(), [
             'nisn' => ['required', 'digits:10'],
         ], [
@@ -146,6 +166,14 @@ class AuthController extends Controller
 
     public function storeRegistration(Request $request): RedirectResponse
     {
+        if (! PengaturanSpmb::registrationServiceIsOpen()) {
+            $this->generateRegisterCaptcha($request);
+
+            return back()
+                ->withErrors(['nisn' => PengaturanSpmb::registrationServiceMessage()])
+                ->onlyInput('nisn', 'no_wa');
+        }
+
         $validator = Validator::make($request->all(), [
             'nisn' => ['required', 'digits:10'],
             'no_wa' => ['required', 'regex:/^8[0-9]{8,11}$/'],

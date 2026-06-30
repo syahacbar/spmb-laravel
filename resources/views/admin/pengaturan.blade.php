@@ -124,6 +124,9 @@
             <button class="nav-link" id="whitelist-tab" data-bs-toggle="tab" data-bs-target="#whitelist-pane" type="button" role="tab" aria-controls="whitelist-pane" aria-selected="false">Whitelist Calon Siswa</button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="nav-link" id="layanan-tab" data-bs-toggle="tab" data-bs-target="#layanan-pane" type="button" role="tab" aria-controls="layanan-pane" aria-selected="false">Jam Layanan</button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link" id="program-tab" data-bs-toggle="tab" data-bs-target="#program-pane" type="button" role="tab" aria-controls="program-pane" aria-selected="false">Program Keahlian</button>
         </li>
         <li class="nav-item" role="presentation">
@@ -294,6 +297,61 @@
                         </table>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <section class="tab-pane fade card shadow-sm" id="layanan-pane" role="tabpanel" aria-labelledby="layanan-tab" tabindex="0">
+            <div class="card-header">
+                <h4 class="settings-section-title">Periode Aktif Pelayanan Pendaftaran</h4>
+                <p class="settings-section-subtitle">Atur tanggal dan jam calon murid dapat membuat akun serta login ke sistem. Zona waktu yang digunakan adalah WIT.</p>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ route('admin.pengaturan.layanan-pendaftaran') }}" class="row g-3 align-items-end">
+                    @csrf
+                    <div class="col-12">
+                        <input type="hidden" name="layanan_pendaftaran_aktif" value="0">
+                        <div class="form-check form-switch">
+                            <input
+                                type="checkbox"
+                                name="layanan_pendaftaran_aktif"
+                                value="1"
+                                class="form-check-input"
+                                id="layananPendaftaranAktif"
+                                @checked((string) old('layanan_pendaftaran_aktif', $settings['layanan_pendaftaran_aktif']) === '1')
+                            >
+                            <label class="form-check-label fw-bold" for="layananPendaftaranAktif">Batasi pendaftaran dan login calon murid sesuai periode layanan</label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tanggal Buka</label>
+                        <input type="date" name="tanggal_buka_layanan_pendaftaran" value="{{ old('tanggal_buka_layanan_pendaftaran', $settings['tanggal_buka_layanan_pendaftaran']) }}" class="form-control form-control-lg" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tanggal Tutup</label>
+                        <input type="date" name="tanggal_tutup_layanan_pendaftaran" value="{{ old('tanggal_tutup_layanan_pendaftaran', $settings['tanggal_tutup_layanan_pendaftaran']) }}" class="form-control form-control-lg" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Jam Buka</label>
+                        <input type="time" name="jam_buka_layanan_pendaftaran" value="{{ old('jam_buka_layanan_pendaftaran', $settings['jam_buka_layanan_pendaftaran']) }}" class="form-control form-control-lg" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Jam Tutup</label>
+                        <input type="time" name="jam_tutup_layanan_pendaftaran" value="{{ old('jam_tutup_layanan_pendaftaran', $settings['jam_tutup_layanan_pendaftaran']) }}" class="form-control form-control-lg" required>
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button class="btn btn-primary btn-lg">Simpan</button>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Pesan Saat Layanan Tutup</label>
+                        <textarea name="pesan_layanan_pendaftaran_tutup" class="form-control" rows="3" maxlength="500" placeholder="Kosongkan untuk memakai pesan otomatis berdasarkan periode layanan.">{{ old('pesan_layanan_pendaftaran_tutup', $settings['pesan_layanan_pendaftaran_tutup']) }}</textarea>
+                        <div class="form-text">Pesan ini tampil di halaman login, daftar akun, dan pengecekan NISN ketika layanan pendaftaran sedang tutup.</div>
+                    </div>
+                    <div class="col-12">
+                        <div class="alert alert-info mb-0">
+                            {{ \App\Models\PengaturanSpmb::registrationServiceMessage() }}
+                        </div>
+                    </div>
+                </form>
             </div>
         </section>
 

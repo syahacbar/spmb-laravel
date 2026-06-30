@@ -91,6 +91,12 @@ return new class extends Migration
             'waktu_tes' => '08.00 WIT s.d. selesai',
             'tempat_tes' => 'SMK Negeri 1 Bintuni',
             'catatan_kartu' => "Peserta wajib mengikuti tahap wawancara dan pemetaan jurusan sesuai jadwal yang tercantum pada kartu ini.\nPeserta wajib mencetak dan membawa kartu pendaftaran sebagai bukti keikutsertaan.\nPeserta wajib mengenakan seragam SMP lengkap dan berpenampilan rapi.",
+            'layanan_pendaftaran_aktif' => '1',
+            'tanggal_buka_layanan_pendaftaran' => '2026-07-01',
+            'tanggal_tutup_layanan_pendaftaran' => '2026-07-03',
+            'jam_buka_layanan_pendaftaran' => '00:00',
+            'jam_tutup_layanan_pendaftaran' => '23:59',
+            'pesan_layanan_pendaftaran_tutup' => '',
         ];
     }
 

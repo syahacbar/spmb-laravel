@@ -9,9 +9,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $invalidNiks = DB::table('tb_formulir')
-            ->whereRaw("nik NOT REGEXP '^[0-9]{16}$'")
-            ->pluck('nik');
+        $invalidNikQuery = DB::table('tb_formulir');
+
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            $invalidNikQuery->whereRaw("length(nik) != 16 OR nik GLOB '*[^0-9]*'");
+        } else {
+            $invalidNikQuery->whereRaw("nik NOT REGEXP '^[0-9]{16}$'");
+        }
+
+        $invalidNiks = $invalidNikQuery->pluck('nik');
 
         if ($invalidNiks->isNotEmpty()) {
             throw new RuntimeException(

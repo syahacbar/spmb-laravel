@@ -54,6 +54,10 @@
                                 <div class="alert alert-warning">{{ session('warning') }}</div>
                             @endif
 
+                            @if(! $registrationServiceOpen)
+                                <div class="alert alert-warning">{{ $registrationServiceMessage }}</div>
+                            @endif
+
                             @if($errors->any())
                                 <div class="alert alert-danger">
                                     <div class="fw-bold mb-1">Login belum berhasil.</div>

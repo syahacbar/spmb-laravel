@@ -116,6 +116,41 @@ class AdminController extends Controller
         return back()->with('success', 'Identitas dan pengaturan kartu pendaftaran berhasil diperbarui.');
     }
 
+    public function updateLayananPendaftaran(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'layanan_pendaftaran_aktif' => ['nullable', 'boolean'],
+            'tanggal_buka_layanan_pendaftaran' => ['required', 'date_format:Y-m-d'],
+            'tanggal_tutup_layanan_pendaftaran' => ['required', 'date_format:Y-m-d', 'after_or_equal:tanggal_buka_layanan_pendaftaran'],
+            'jam_buka_layanan_pendaftaran' => ['required', 'date_format:H:i', 'different:jam_tutup_layanan_pendaftaran'],
+            'jam_tutup_layanan_pendaftaran' => ['required', 'date_format:H:i'],
+            'pesan_layanan_pendaftaran_tutup' => ['nullable', 'string', 'max:500'],
+        ], [
+            'tanggal_buka_layanan_pendaftaran.required' => 'Tanggal buka layanan wajib diisi.',
+            'tanggal_buka_layanan_pendaftaran.date_format' => 'Tanggal buka layanan harus memakai format YYYY-MM-DD.',
+            'tanggal_tutup_layanan_pendaftaran.required' => 'Tanggal tutup layanan wajib diisi.',
+            'tanggal_tutup_layanan_pendaftaran.date_format' => 'Tanggal tutup layanan harus memakai format YYYY-MM-DD.',
+            'tanggal_tutup_layanan_pendaftaran.after_or_equal' => 'Tanggal tutup layanan tidak boleh sebelum tanggal buka.',
+            'jam_buka_layanan_pendaftaran.required' => 'Jam buka layanan wajib diisi.',
+            'jam_buka_layanan_pendaftaran.date_format' => 'Jam buka layanan harus memakai format HH:MM.',
+            'jam_buka_layanan_pendaftaran.different' => 'Jam buka dan jam tutup layanan tidak boleh sama.',
+            'jam_tutup_layanan_pendaftaran.required' => 'Jam tutup layanan wajib diisi.',
+            'jam_tutup_layanan_pendaftaran.date_format' => 'Jam tutup layanan harus memakai format HH:MM.',
+            'pesan_layanan_pendaftaran_tutup.max' => 'Pesan saat layanan tutup maksimal 500 karakter.',
+        ]);
+
+        PengaturanSpmb::setMany([
+            'layanan_pendaftaran_aktif' => $request->boolean('layanan_pendaftaran_aktif') ? '1' : '0',
+            'tanggal_buka_layanan_pendaftaran' => $data['tanggal_buka_layanan_pendaftaran'],
+            'tanggal_tutup_layanan_pendaftaran' => $data['tanggal_tutup_layanan_pendaftaran'],
+            'jam_buka_layanan_pendaftaran' => $data['jam_buka_layanan_pendaftaran'],
+            'jam_tutup_layanan_pendaftaran' => $data['jam_tutup_layanan_pendaftaran'],
+            'pesan_layanan_pendaftaran_tutup' => trim((string) ($data['pesan_layanan_pendaftaran_tutup'] ?? '')),
+        ]);
+
+        return back()->with('success', 'Periode layanan pendaftaran berhasil diperbarui.');
+    }
+
     public function showSignature(): BinaryFileResponse|StreamedResponse
     {
         return $this->signatureResponse();
