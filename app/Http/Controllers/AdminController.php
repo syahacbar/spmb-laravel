@@ -58,6 +58,12 @@ class AdminController extends Controller
                 ->distinct()
                 ->orderByDesc('tahun_pendaftaran')
                 ->pluck('tahun_pendaftaran'),
+            'whitelistSchools' => CalonSiswa::query()
+                ->select('asal_sekolah')
+                ->whereNotNull('asal_sekolah')
+                ->distinct()
+                ->orderBy('asal_sekolah')
+                ->pluck('asal_sekolah'),
             'whitelist' => CalonSiswa::query()
                 ->orderByDesc('tahun_pendaftaran')
                 ->orderByDesc('is_active')
@@ -211,6 +217,63 @@ class AdminController extends Controller
         $program->delete();
 
         return back()->with('success', 'Program keahlian berhasil dihapus.');
+    }
+
+    public function storeCalonSiswa(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'nisn' => ['required', 'digits:10'],
+            'nama' => ['required', 'string', 'max:100'],
+            'tempat_lahir' => ['required', 'string', 'max:100'],
+            'tanggal_lahir' => ['required', 'date_format:Y-m-d'],
+            'asal_sekolah' => ['required', 'string', 'max:100'],
+            'tahun_pendaftaran' => ['required', 'digits:4'],
+            'is_active' => ['nullable', 'boolean'],
+        ], [
+            'nisn.required' => 'NISN wajib diisi.',
+            'nisn.digits' => 'NISN harus berisi 10 digit angka.',
+            'tanggal_lahir.date_format' => 'Tanggal lahir harus memakai format YYYY-MM-DD.',
+        ]);
+
+        $calonSiswa = CalonSiswa::updateOrCreate(
+            ['nisn' => $data['nisn']],
+            [
+                'nama' => $data['nama'],
+                'tempat_lahir' => $data['tempat_lahir'],
+                'tanggal_lahir' => $data['tanggal_lahir'],
+                'asal_sekolah' => $data['asal_sekolah'],
+                'tahun_pendaftaran' => $data['tahun_pendaftaran'],
+                'is_active' => (bool) ($data['is_active'] ?? false),
+            ],
+        );
+
+        return back()->with(
+            'success',
+            $calonSiswa->wasRecentlyCreated
+                ? 'Data whitelist calon siswa berhasil ditambahkan.'
+                : 'Data whitelist calon siswa berhasil diperbarui.',
+        );
+    }
+
+    public function downloadCalonSiswaTemplate(): StreamedResponse
+    {
+        $filename = 'format-whitelist-calon-siswa.csv';
+        $rows = [
+            ['nisn', 'nama', 'tempat_lahir', 'tanggal_lahir', 'asal_sekolah'],
+            ['0012345678', 'Nama Calon Siswa', 'Bintuni', '2011-07-15', 'SMP Negeri 1 Bintuni'],
+        ];
+
+        return response()->streamDownload(function () use ($rows): void {
+            $output = fopen('php://output', 'w');
+
+            foreach ($rows as $row) {
+                fputcsv($output, $row);
+            }
+
+            fclose($output);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
     public function importCalonSiswa(Request $request): RedirectResponse

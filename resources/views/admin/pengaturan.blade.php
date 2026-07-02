@@ -29,12 +29,6 @@
         .settings-tab-content {
             padding-top: 1rem;
         }
-        .bulk-action-panel {
-            border: 1px solid #fed7aa;
-            border-radius: .65rem;
-            background: #fff7ed;
-            padding: 1rem;
-        }
         .whitelist-table-wrap .dt-search,
         .whitelist-table-wrap .dt-length {
             margin-bottom: .75rem;
@@ -84,28 +78,31 @@
         .primary-contact {
             border-left: 4px solid #16a34a;
         }
-        .whitelist-summary {
+        .whitelist-toolbar {
+            align-items: end;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: .75rem;
+            gap: .85rem;
+            grid-template-columns: minmax(180px, 1.2fr) minmax(140px, .8fr) minmax(140px, .8fr) auto;
+            margin-bottom: 1rem;
         }
-        .whitelist-summary-item {
-            border: 1px solid #e4e7ec;
-            border-radius: .65rem;
-            background: #f8fafc;
-            padding: .9rem;
+        .whitelist-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .5rem;
+            justify-content: flex-end;
         }
-        .whitelist-summary-item span {
-            display: block;
-            color: #667085;
-            font-size: .78rem;
-            font-weight: 700;
-            text-transform: uppercase;
+        @media (max-width: 991.98px) {
+            .whitelist-toolbar {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .whitelist-actions {
+                justify-content: flex-start;
+            }
         }
-        .whitelist-summary-item strong {
-            color: #172033;
-            font-size: 1.35rem;
-            font-weight: 900;
+        @media (max-width: 575.98px) {
+            .whitelist-toolbar {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 
@@ -206,35 +203,44 @@
         <section class="tab-pane fade card shadow-sm" id="whitelist-pane" role="tabpanel" aria-labelledby="whitelist-tab" tabindex="0">
             <div class="card-header">
                 <h4 class="settings-section-title">Whitelist Calon Siswa</h4>
-                <p class="settings-section-subtitle">Import data NISN yang diperbolehkan membuat akun. Data tahun lama bisa dinonaktifkan tanpa dihapus.</p>
+                <p class="settings-section-subtitle">Kelola NISN yang diperbolehkan membuat akun, baik lewat input manual maupun import CSV.</p>
             </div>
             <div class="card-body">
-                <form method="post" action="{{ route('admin.pengaturan.whitelist.import') }}" enctype="multipart/form-data" class="row g-3 align-items-end">
-                    @csrf
-                    <div class="col-md-3">
-                        <label class="form-label">Tahun Pendaftaran</label>
-                        <input type="text" name="tahun_pendaftaran" value="{{ old('tahun_pendaftaran', $settings['tahun_pendaftaran']) }}" class="form-control" maxlength="4" required>
+                <div class="whitelist-toolbar">
+                    <div>
+                        <label class="form-label" for="whitelistFilterSchool">Asal Sekolah</label>
+                        <select class="form-select" id="whitelistFilterSchool">
+                            <option value="">Semua sekolah</option>
+                            @foreach($whitelistSchools as $school)
+                                <option value="{{ $school }}">{{ $school }}</option>
+                            @endforeach
+                        </select>
                     </div>
-                    <div class="col-md-5">
-                        <label class="form-label">File CSV Whitelist</label>
-                        <input type="file" name="calon_siswa_csv" class="form-control" accept=".csv,text/csv,text/plain" required>
+                    <div>
+                        <label class="form-label" for="whitelistFilterYear">Tahun Pendaftaran</label>
+                        <select class="form-select" id="whitelistFilterYear">
+                            <option value="">Semua tahun</option>
+                            @foreach($whitelistYears as $year)
+                                <option value="{{ $year }}">{{ $year }}</option>
+                            @endforeach
+                        </select>
                     </div>
-                    <div class="col-md-4 d-grid">
-                        <button class="btn btn-primary">Import Whitelist</button>
+                    <div>
+                        <label class="form-label" for="whitelistFilterStatus">Status</label>
+                        <select class="form-select" id="whitelistFilterStatus">
+                            <option value="">Semua status</option>
+                            <option value="Aktif">Aktif</option>
+                            <option value="Nonaktif">Nonaktif</option>
+                        </select>
                     </div>
-                    <div class="col-12">
-                        <div class="small text-muted mb-2">Format kolom CSV: <strong>nisn,nama,tempat_lahir,tanggal_lahir,asal_sekolah</strong>.</div>
-                        <div class="form-check">
-                            <input type="checkbox" name="deactivate_missing_in_year" value="1" class="form-check-input" id="nonaktifTidakAdaCsv" checked>
-                            <label class="form-check-label" for="nonaktifTidakAdaCsv">Nonaktifkan NISN pada tahun yang sama jika tidak ada di CSV baru</label>
-                            <div class="form-text">Penonaktifan tahun pendaftaran lain dilakukan melalui Aksi Massal di bawah.</div>
-                        </div>
+                    <div class="whitelist-actions">
+                        <button type="button" class="btn btn-outline-secondary" id="whitelistResetFilter">Reset</button>
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#importWhitelistModal">Import CSV</button>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tambahWhitelistModal">Tambah Manual</button>
                     </div>
-                </form>
+                </div>
 
-                <hr>
-
-                <div class="bulk-action-panel mb-4">
+                <div class="d-none">
                     <form method="post" action="{{ route('admin.pengaturan.whitelist.deactivate') }}" class="row g-3 align-items-end">
                         @csrf
                         <div class="col-lg-7">
@@ -299,6 +305,104 @@
                 </div>
             </div>
         </section>
+
+        <div class="modal fade" id="tambahWhitelistModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content">
+                    <form method="post" action="{{ route('admin.pengaturan.whitelist.store') }}" data-settings-tab="#whitelist-pane">
+                        @csrf
+                        <div class="modal-header">
+                            <h5 class="modal-title">Tambah Data Whitelist</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">NISN</label>
+                                    <input type="text" name="nisn" value="{{ old('nisn') }}" class="form-control" maxlength="10" inputmode="numeric" required>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">Nama Calon Siswa</label>
+                                    <input type="text" name="nama" value="{{ old('nama') }}" class="form-control" maxlength="100" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Tempat Lahir</label>
+                                    <input type="text" name="tempat_lahir" value="{{ old('tempat_lahir') }}" class="form-control" maxlength="100" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Tanggal Lahir</label>
+                                    <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir') }}" class="form-control" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Tahun Pendaftaran</label>
+                                    <input type="text" name="tahun_pendaftaran" value="{{ old('tahun_pendaftaran', $settings['tahun_pendaftaran']) }}" class="form-control" maxlength="4" inputmode="numeric" required>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">Asal Sekolah</label>
+                                    <input type="text" name="asal_sekolah" value="{{ old('asal_sekolah') }}" class="form-control" maxlength="100" list="whitelistSchoolOptions" required>
+                                    <datalist id="whitelistSchoolOptions">
+                                        @foreach($whitelistSchools as $school)
+                                            <option value="{{ $school }}"></option>
+                                        @endforeach
+                                    </datalist>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Status</label>
+                                    <select name="is_active" class="form-select">
+                                        <option value="1" @selected(old('is_active', '1') === '1')>Aktif</option>
+                                        <option value="0" @selected(old('is_active') === '0')>Nonaktif</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button class="btn btn-primary">Simpan Data</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="importWhitelistModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <form method="post" action="{{ route('admin.pengaturan.whitelist.import') }}" enctype="multipart/form-data" data-settings-tab="#whitelist-pane">
+                        @csrf
+                        <div class="modal-header">
+                            <h5 class="modal-title">Import Whitelist Dari CSV</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Tahun Pendaftaran</label>
+                                    <input type="text" name="tahun_pendaftaran" value="{{ old('tahun_pendaftaran', $settings['tahun_pendaftaran']) }}" class="form-control" maxlength="4" inputmode="numeric" required>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">File CSV Whitelist</label>
+                                    <input type="file" name="calon_siswa_csv" class="form-control" accept=".csv,text/csv,text/plain" required>
+                                    <div class="form-text">Format kolom: nisn,nama,tempat_lahir,tanggal_lahir,asal_sekolah.</div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="deactivate_missing_in_year" value="1" class="form-check-input" id="nonaktifTidakAdaCsv" checked>
+                                        <label class="form-check-label" for="nonaktifTidakAdaCsv">Nonaktifkan NISN pada tahun yang sama jika tidak ada di CSV baru</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <a href="{{ route('admin.pengaturan.whitelist.template') }}" class="btn btn-outline-secondary btn-sm">Download Format CSV</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button class="btn btn-primary">Import Data</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
         <section class="tab-pane fade card shadow-sm" id="layanan-pane" role="tabpanel" aria-labelledby="layanan-tab" tabindex="0">
             <div class="card-header">
@@ -547,8 +651,11 @@
             document.querySelectorAll('#settingsTabContent form').forEach(function (form) {
                 form.addEventListener('submit', function () {
                     const pane = form.closest('.tab-pane');
+                    const targetPane = form.dataset.settingsTab;
 
-                    if (pane) {
+                    if (targetPane) {
+                        window.localStorage.setItem(tabStorageKey, targetPane);
+                    } else if (pane) {
                         window.localStorage.setItem(tabStorageKey, `#${pane.id}`);
                     }
                 });
@@ -590,6 +697,46 @@
                     row.cells[0].textContent = table.page.info().start + index + 1;
                 });
             };
+
+            const escapeRegex = function (value) {
+                return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            };
+
+            const exactColumnFilter = function (columnIndex, value) {
+                table.column(columnIndex).search(value ? `^\\s*${escapeRegex(value)}\\s*$` : '', true, false);
+            };
+
+            const schoolFilter = document.getElementById('whitelistFilterSchool');
+            const yearFilter = document.getElementById('whitelistFilterYear');
+            const statusFilter = document.getElementById('whitelistFilterStatus');
+            const resetFilter = document.getElementById('whitelistResetFilter');
+
+            const applyWhitelistFilters = function () {
+                exactColumnFilter(3, schoolFilter?.value || '');
+                exactColumnFilter(4, yearFilter?.value || '');
+                exactColumnFilter(5, statusFilter?.value || '');
+                table.draw();
+            };
+
+            [schoolFilter, yearFilter, statusFilter].forEach(function (filter) {
+                filter?.addEventListener('change', applyWhitelistFilters);
+            });
+
+            resetFilter?.addEventListener('click', function () {
+                if (schoolFilter) {
+                    schoolFilter.value = '';
+                }
+
+                if (yearFilter) {
+                    yearFilter.value = '';
+                }
+
+                if (statusFilter) {
+                    statusFilter.value = '';
+                }
+
+                applyWhitelistFilters();
+            });
 
             table.on('draw', updateRowNumbers);
             updateRowNumbers();

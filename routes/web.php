@@ -59,6 +59,8 @@ Route::middleware('spmb.auth')->group(function (): void {
         Route::post('/pengaturan/program-keahlian', [AdminController::class, 'updateProgramKeahlian'])->name('pengaturan.program.update');
         Route::post('/pengaturan/program-keahlian/tambah', [AdminController::class, 'storeProgramKeahlian'])->name('pengaturan.program.store');
         Route::delete('/pengaturan/program-keahlian/{program}', [AdminController::class, 'destroyProgramKeahlian'])->name('pengaturan.program.destroy');
+        Route::get('/pengaturan/whitelist-calon-siswa/template-csv', [AdminController::class, 'downloadCalonSiswaTemplate'])->name('pengaturan.whitelist.template');
+        Route::post('/pengaturan/whitelist-calon-siswa/tambah', [AdminController::class, 'storeCalonSiswa'])->name('pengaturan.whitelist.store');
         Route::post('/pengaturan/whitelist-calon-siswa/import', [AdminController::class, 'importCalonSiswa'])->name('pengaturan.whitelist.import');
         Route::post('/pengaturan/whitelist-calon-siswa/aktifkan', [AdminController::class, 'activateCalonSiswaWhitelist'])->name('pengaturan.whitelist.activate');
         Route::post('/pengaturan/whitelist-calon-siswa/nonaktifkan', [AdminController::class, 'deactivateCalonSiswaWhitelist'])->name('pengaturan.whitelist.deactivate');
